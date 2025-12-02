@@ -139,8 +139,6 @@ namespace HospitadentApi.Repository
                       u.department,
                       u.role,
                       u.show_in_calendar,
-                      u.saved_on,
-                    u.updated_on,
                     u.is_active
                     FROM users u
                     WHERE u.isDeleted = 0
@@ -229,8 +227,6 @@ namespace HospitadentApi.Repository
                   u.department,
                   u.role,
                   u.show_in_calendar,
-                  u.saved_on,
-                  u.updated_on,
                   u.is_active
                 FROM users u
                 WHERE u.isDeleted = 0
@@ -279,8 +275,6 @@ namespace HospitadentApi.Repository
             int ordDepartment = rd.GetOrdinal("department");
             int ordRole = rd.GetOrdinal("role");
             int ordShowInCalendar = rd.GetOrdinal("show_in_calendar");
-            int ordCreated = rd.GetOrdinal("saved_on");
-            int ordModified = rd.GetOrdinal("updated_on");
             int ordIsActive = rd.GetOrdinal("is_active");
 
             while (rd.Read())
@@ -318,12 +312,6 @@ namespace HospitadentApi.Repository
 
                 if (!rd.IsDBNull(ordShowInCalendar))
                     u.ShowInCalender = rd.GetInt32(ordShowInCalendar);
-
-                if (!rd.IsDBNull(ordCreated))
-                    u.CreatedDate = rd.GetDateTime(ordCreated);
-                // ModifiedDate is nullable on EntityBase
-                if (!rd.IsDBNull(ordModified))
-                    u.ModifiedDate = rd.GetDateTime(ordModified);
 
                 if (!rd.IsDBNull(ordIsActive))
                     u.IsActive = rd.GetBoolean(ordIsActive);
