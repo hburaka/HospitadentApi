@@ -1,3 +1,8 @@
+using DotNetEnv;
+
+// .env dosyasını (varsa) yükle
+Env.Load(); // Varsayılan olarak çalışma dizinindeki .env dosyasını okur
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
