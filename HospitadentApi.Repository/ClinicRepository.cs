@@ -40,7 +40,36 @@ namespace HospitadentApi.Repository
             return _clinic;
         }
 
-        public IList<Clinic> LoadAll() => throw new NotImplementedException();
+        public IList<Clinic> LoadAll()
+        {
+            var clinics = new List<Clinic>();
+            using var db = new DBHelper(_connectionString);
+            try
+            {
+                using var rd = db.ExecuteReaderSql("select * from clinics where IsDeleted = 0 and status = 1");
+                int ordId = rd.GetOrdinal("id");
+                int ordName = rd.GetOrdinal("clinic_name");
+                int ordStatus = rd.GetOrdinal("status");
+                int ordIsDeleted = rd.GetOrdinal("IsDeleted");
+
+                while (rd.Read())
+                {
+                    var c = new Clinic
+                    {
+                        Id = rd.IsDBNull(ordId) ? 0 : rd.GetInt32(ordId),
+                        ClinicName = rd.IsDBNull(ordName) ? string.Empty : rd.GetString(ordName),
+                        Status = rd.IsDBNull(ordStatus) ? false : rd.GetBoolean(ordStatus),
+                        IsDeleted = rd.IsDBNull(ordIsDeleted) ? false : rd.GetBoolean(ordIsDeleted)
+                    };
+                    clinics.Add(c);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error loading clinics", ex);
+            }
+            return clinics;
+        }
         public int Update(Clinic instance) => throw new NotImplementedException();
     }
 }
