@@ -17,9 +17,6 @@ namespace HospitadentApi.Repository
             _connectionString = connectionString;
         }
 
-        public int Delete(Clinic instance) => throw new NotImplementedException();
-        public int Insert(Clinic instance) => throw new NotImplementedException();
-
         public Clinic? Load(int Id)
         {
             DBHelper db = new DBHelper(_connectionString);
@@ -70,6 +67,9 @@ namespace HospitadentApi.Repository
             }
             return clinics;
         }
+
+        public int Delete(Clinic instance) => throw new NotImplementedException();
+        public int Insert(Clinic instance) => throw new NotImplementedException();
         public int Update(Clinic instance) => throw new NotImplementedException();
     }
 }
