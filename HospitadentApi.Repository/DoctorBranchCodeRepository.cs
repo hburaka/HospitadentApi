@@ -17,25 +17,6 @@ namespace HospitadentApi.Repository
             _connectionString = connectionString;
         }
 
-        private static DateTime? ReadNullableDate(MySqlDataReader rd, int ordinal)
-        {
-            var val = rd.GetValue(ordinal);
-            if (val == null || val == DBNull.Value)
-                return null;
-
-            // MySqlDateTime protects against zero-date values
-            if (val is MySql.Data.Types.MySqlDateTime mySqlDt)
-                return mySqlDt.IsValidDateTime ? mySqlDt.GetDateTime() : (DateTime?)null;
-
-            if (val is DateTime dt)
-                return dt;
-
-            if (DateTime.TryParse(val.ToString(), out var parsed))
-                return parsed;
-
-            return null;
-        }
-
         public DoctorBranchCode? Load(int Id)
         {
             try
@@ -115,7 +96,6 @@ namespace HospitadentApi.Repository
         {
             throw new NotImplementedException();
         }
-
         public int Insert(DoctorBranchCode instance)
         {
             throw new NotImplementedException();

@@ -18,7 +18,20 @@ builder.Services.AddScoped(sp =>
 {
     var cfg = sp.GetRequiredService<IConfiguration>();
     var conn = cfg.GetConnectionString("DefaultConnection") ?? cfg["ConnectionStrings:DefaultConnection"];
-    return new UserRepository(conn ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found."));
+    return new ClinicRepository(conn ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found."));
+});
+builder.Services.AddScoped(sp =>
+{
+    var cfg = sp.GetRequiredService<IConfiguration>();
+    var conn = cfg.GetConnectionString("DefaultConnection") ?? cfg["ConnectionStrings:DefaultConnection"];
+    return new DoctorBranchCodeRepository(conn ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found."));
+});
+builder.Services.AddScoped(sp =>
+{
+    var cfg = sp.GetRequiredService<IConfiguration>();
+    var conn = cfg.GetConnectionString("DefaultConnection") ?? cfg["ConnectionStrings:DefaultConnection"];
+    var clinicRepo = sp.GetRequiredService<ClinicRepository>();
+    return new UserRepository(conn ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found."), clinicRepo);
 });
 
 builder.Services.AddScoped<IRepository<HospitadentApi.Entity.DoctorBranchCode>>(sp => sp.GetRequiredService<DoctorBranchCodeRepository>());

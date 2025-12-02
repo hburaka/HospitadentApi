@@ -9,13 +9,15 @@ namespace HospitadentApi.Repository
 {
     public class UserRepository : IRepository<User>
     {
+        private readonly ClinicRepository _clinicRepo;
         private readonly string _connectionString;
 
-        public UserRepository(string connectionString)
+        public UserRepository(string connectionString, ClinicRepository clinicRepo)
         {
             if (string.IsNullOrWhiteSpace(connectionString))
                 throw new ArgumentException("Connection string must be provided.", nameof(connectionString));
             _connectionString = connectionString;
+            _clinicRepo = clinicRepo ?? throw new ArgumentNullException(nameof(clinicRepo));
         }
 
         private static List<int> ParseIdList(string? csv)
@@ -49,13 +51,24 @@ namespace HospitadentApi.Repository
                       u.last_name AS `LastName`,
                       u.user_type,
                       u.clinic_id,
+                      c.clinic_name AS clinic_name,
+                      c.status AS clinic_status,
+                      c.isDeleted AS clinic_isDeleted,
                       u.allowed_clinics,
                       u.department,
+                      d.department_name AS department_name,
+                      d.isDeleted AS department_isDeleted,
                       u.role,
+                      r.roleName AS role_name,
+                      r.department_id AS role_department_id,
                       u.show_in_calendar
                     FROM users u
+                    LEFT JOIN clinics c ON u.clinic_id = c.id AND c.isDeleted = 0
+                    LEFT JOIN user_departments d ON u.department = d.id AND d.isDeleted = 0
+                    LEFT JOIN user_roles r ON u.role = r.id AND r.isDeleted = 0
                     WHERE u.id = @Id AND u.isDeleted = 0
                     ");
+
                 if (!rd.Read())
                     return null;
 
@@ -63,9 +76,16 @@ namespace HospitadentApi.Repository
                 var ordLastName = rd.GetOrdinal("LastName");
                 var ordUserType = rd.GetOrdinal("user_type");
                 var ordClinicId = rd.GetOrdinal("clinic_id");
+                var ordClinicName = rd.GetOrdinal("clinic_name");
+                var ordClinicStatus = rd.GetOrdinal("clinic_status");
+                var ordClinicIsDeleted = rd.GetOrdinal("clinic_isDeleted");
                 var ordAllowedClinics = rd.GetOrdinal("allowed_clinics");
                 var ordDepartment = rd.GetOrdinal("department");
+                var ordDepartmentName = rd.GetOrdinal("department_name");
+                var ordDepartmentIsDeleted = rd.GetOrdinal("department_isDeleted");
                 var ordRole = rd.GetOrdinal("role");
+                var ordRoleName = rd.GetOrdinal("role_name");
+                var ordRoleDeptId = rd.GetOrdinal("role_department_id");
                 var ordShowInCalendar = rd.GetOrdinal("show_in_calendar");
 
                 var item = new User();
@@ -79,10 +99,22 @@ namespace HospitadentApi.Repository
                 if (!rd.IsDBNull(ordUserType))
                     item.UserType = rd.GetInt32(ordUserType);
 
+                // Clinic (full object from joined table if available)
                 if (!rd.IsDBNull(ordClinicId))
                 {
                     var clinicId = rd.GetInt32(ordClinicId);
-                    item.Clinic = new Clinic { Id = clinicId };
+                    var clinic = new Clinic { Id = clinicId };
+
+                    if (!rd.IsDBNull(ordClinicName))
+                        clinic.Name = rd.GetString(ordClinicName);
+
+                    if (!rd.IsDBNull(ordClinicStatus))
+                        clinic.Status = rd.GetBoolean(ordClinicStatus);
+
+                    if (!rd.IsDBNull(ordClinicIsDeleted))
+                        clinic.IsDeleted = rd.GetBoolean(ordClinicIsDeleted);
+
+                    item.Clinic = clinic;
                 }
 
                 if (!rd.IsDBNull(ordAllowedClinics))
@@ -90,22 +122,40 @@ namespace HospitadentApi.Repository
                     var csv = rd.GetString(ordAllowedClinics);
                     item.AllowedClinic = csv;
                     var ids = ParseIdList(csv);
-                    item.AllowedClinics = ids.Select(i => new Clinic { Id = i }).ToList();
-
-                    // OPTIONAL: if you need full Clinic objects (name, address, etc.)
-                    // you can query the clinics table here using the ids and replace AllowedClinics with full objects.
+                    item.AllowedClinics = _clinicRepo.GetByIds(ids).ToList();
                 }
 
+                // Department (full object from joined table if available)
                 if (!rd.IsDBNull(ordDepartment))
                 {
                     var deptId = rd.GetInt32(ordDepartment);
-                    item.Department = new Department { Id = deptId };
+                    var dept = new Department { Id = deptId };
+
+                    if (!rd.IsDBNull(ordDepartmentName))
+                        dept.Name = rd.GetString(ordDepartmentName);
+
+                    if (!rd.IsDBNull(ordDepartmentIsDeleted))
+                        dept.IsDeleted = rd.GetBoolean(ordDepartmentIsDeleted);
+
+                    item.Department = dept;
                 }
 
+                // Role (full object from joined table if available)
                 if (!rd.IsDBNull(ordRole))
                 {
                     var roleId = rd.GetInt32(ordRole);
-                    item.URole = new URole { Id = roleId };
+                    var role = new URole { Id = roleId };
+
+                    if (!rd.IsDBNull(ordRoleName))
+                        role.Name = rd.GetString(ordRoleName);
+
+                    if (!rd.IsDBNull(ordRoleDeptId))
+                    {
+                        var roleDeptId = rd.GetInt32(ordRoleDeptId);
+                        role.Department = new Department { Id = roleDeptId };
+                    }
+
+                    item.URole = role;
                 }
 
                 if (!rd.IsDBNull(ordShowInCalendar))
@@ -177,7 +227,7 @@ namespace HospitadentApi.Repository
                         var csv = rd.GetString(ordAllowedClinics);
                         item.AllowedClinic = csv;
                         var ids = ParseIdList(csv);
-                        item.AllowedClinics = ids.Select(i => new Clinic { Id = i }).ToList();
+                        item.AllowedClinics = _clinicRepo.GetByIds(ids).ToList();
                     }
 
                     if (!rd.IsDBNull(ordDepartment))
