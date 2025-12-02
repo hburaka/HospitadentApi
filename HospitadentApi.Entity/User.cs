@@ -7,23 +7,21 @@ using System.Threading.Tasks;
 
 namespace HospitadentApi.Entity
 {
-    public class User : IEntity
+    public class User : EntityBase
     {
-        public string Name { get; set; }
-
-        public string LastName { get; set; }
-
+        public string Name { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
         public int UserType { get; set; }
+        public Clinic? Clinic { get; set; }
 
-        public Clinic Clinic { get; set; }
+        // raw CSV from DB (kept for compatibility)
+        public string AllowedClinic { get; set; } = string.Empty;
 
-        public string AllowedClinic { get; set; }
+        // parsed list of Clinic objects (IDs set; populate full Clinic if needed)
+        public List<Clinic> AllowedClinics { get; set; } = new();
 
-        public Department Department { get; set; }
-
-        public URole URole { get; set; }
-
+        public Department? Department { get; set; }
+        public URole? URole { get; set; }
         public int ShowInCalender { get; set; }
-
     }
 }
