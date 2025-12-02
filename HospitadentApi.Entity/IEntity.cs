@@ -9,8 +9,9 @@ namespace HospitadentApi.Entity
     public class IEntity
     {
         int Id { get; set; }
-        DateTime CreatedDate { get; set; }
-        DateTime? ModifiedDate { get; set; }
+        DateTime saved_on { get; set; }
+        DateTime? updated_on { get; set; }
         bool? IsActive { get; set; }
+        bool? IsDeleted { get; set; }
     }
 }
