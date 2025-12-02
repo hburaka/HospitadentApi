@@ -10,6 +10,18 @@ builder.Services.AddScoped(sp =>
     return new ClinicRepository(conn ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found."));
 });
 
+// register DoctorBranchCodeRepository the same way so DI can resolve controllers that depend on it
+builder.Services.AddScoped(sp =>
+{
+    var cfg = sp.GetRequiredService<IConfiguration>();
+    var conn = cfg.GetConnectionString("DefaultConnection") ?? cfg["ConnectionStrings:DefaultConnection"];
+    return new DoctorBranchCodeRepository(conn ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found."));
+});
+
+// optional: register repository interfaces to the concrete instances (if you later inject interfaces)
+builder.Services.AddScoped<IRepository<HospitadentApi.Entity.DoctorBranchCode>>(sp => sp.GetRequiredService<DoctorBranchCodeRepository>());
+builder.Services.AddScoped<IRepository<HospitadentApi.Entity.Clinic>>(sp => sp.GetRequiredService<ClinicRepository>());
+
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();

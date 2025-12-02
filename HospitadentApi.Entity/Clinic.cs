@@ -8,9 +8,8 @@ namespace HospitadentApi.Entity
 {
 public class Clinic : EntityBase
     {
-        public int Id { get; set; }
         public bool Status { get; set; }
-        public string ClinicName { get; set; }
+        public string Name { get; set; }
         public bool IsDeleted { get; set; }
         //public string LegalName { get; set; }
         //public string Logo { get; set; }

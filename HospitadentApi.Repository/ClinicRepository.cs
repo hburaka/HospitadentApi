@@ -29,9 +29,9 @@ namespace HospitadentApi.Repository
             {
                 _clinic = new Clinic();
                 _clinic.Id = rd.GetInt32("id");
-                _clinic.ClinicName = rd.GetString("clinic_name");
+                _clinic.Name = rd.GetString("clinic_name");
                 _clinic.Status = rd.GetBoolean("status");
-                _clinic.IsDeleted = rd.GetBoolean("IsDeleted");
+                _clinic.IsDeleted = rd.GetBoolean("isDeleted");
             }
             rd.Close();
             return _clinic;
@@ -43,18 +43,18 @@ namespace HospitadentApi.Repository
             using var db = new DBHelper(_connectionString);
             try
             {
-                using var rd = db.ExecuteReaderSql("select * from clinics where IsDeleted = 0 and status = 1");
+                using var rd = db.ExecuteReaderSql("select * from clinics where isDeleted = 0 and status = 1");
                 int ordId = rd.GetOrdinal("id");
                 int ordName = rd.GetOrdinal("clinic_name");
                 int ordStatus = rd.GetOrdinal("status");
-                int ordIsDeleted = rd.GetOrdinal("IsDeleted");
+                int ordIsDeleted = rd.GetOrdinal("isDeleted");
 
                 while (rd.Read())
                 {
                     var c = new Clinic
                     {
                         Id = rd.IsDBNull(ordId) ? 0 : rd.GetInt32(ordId),
-                        ClinicName = rd.IsDBNull(ordName) ? string.Empty : rd.GetString(ordName),
+                        Name = rd.IsDBNull(ordName) ? string.Empty : rd.GetString(ordName),
                         Status = rd.IsDBNull(ordStatus) ? false : rd.GetBoolean(ordStatus),
                         IsDeleted = rd.IsDBNull(ordIsDeleted) ? false : rd.GetBoolean(ordIsDeleted)
                     };

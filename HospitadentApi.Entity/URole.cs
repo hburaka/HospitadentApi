@@ -6,10 +6,11 @@ using System.Threading.Tasks;
 
 namespace HospitadentApi.Entity
 {
-    public class Doctor : IEntity
+    public class URole : EntityBase
     {
         public string Name { get; set; }
 
-        public Clinic Clinic { get; set; }
+        public Department Department { get; set; }
     }
+
 }

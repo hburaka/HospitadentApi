@@ -8,10 +8,10 @@ namespace HospitadentApi.Entity
 {
     public class IEntity
     {
-        int Id { get; set; }
-        DateTime saved_on { get; set; }
-        DateTime? updated_on { get; set; }
-        bool? IsActive { get; set; }
-        bool? IsDeleted { get; set; }
+        public int Id { get; set; }
+        public DateTime saved_on { get; set; }
+        public DateTime? updated_on { get; set; }
+        public bool? IsActive { get; set; }
+        public bool? IsDeleted { get; set; }
     }
 }
