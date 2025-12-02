@@ -46,10 +46,30 @@ namespace HospitadentApi.WebService.Controllers
 
         // GET api/clinic/all
         [HttpGet("all", Name = "GetClinics")]
-        public IEnumerable<Clinic> GetAll()
+        public ActionResult<IEnumerable<Clinic>> GetAll()
         {
-            var clinics = _clinicRepository.LoadAll();
-            return clinics ?? Enumerable.Empty<Clinic>();
+            // basic controller-level checks and contextual exception handling
+            try
+            {
+                if (_clinicRepository == null)
+                    throw new InvalidOperationException("Clinic repository is not initialized.");
+
+                var clinics = _clinicRepository.LoadAll() ?? new List<Clinic>();
+
+                if (!clinics.Any())
+                    return NotFound("No clinics found.");
+
+                return Ok(clinics);
+            }
+            catch (InvalidOperationException) // preserve repository initialization errors
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                // add context and rethrow to preserve stack and let middleware/logging handle it
+                throw new Exception("Error loading clinics", ex);
+            }
         }
     }
 }
