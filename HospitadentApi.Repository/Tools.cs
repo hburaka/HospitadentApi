@@ -2,6 +2,9 @@
 using Microsoft.Extensions.Configuration;
 using System.Data.SqlClient;
 using System.Text.RegularExpressions;
+using System;
+using MySql.Data.MySqlClient;
+using MySql.Data.Types;
 
 namespace HospitadentApi.Repository
 {
@@ -271,6 +274,24 @@ namespace HospitadentApi.Repository
             {
                 return null;
             }
+        }
+
+        public static DateTime? ReadNullableDate(MySqlDataReader rd, int ordinal)
+        {
+            var val = rd.GetValue(ordinal);
+            if (val == null || val == DBNull.Value)
+                return null;
+
+            if (val is MySqlDateTime mySqlDt)
+                return mySqlDt.IsValidDateTime ? mySqlDt.GetDateTime() : (DateTime?)null;
+
+            if (val is DateTime dt)
+                return dt;
+
+            if (DateTime.TryParse(val.ToString(), out var parsed))
+                return parsed;
+
+            return null;
         }
     }
 }

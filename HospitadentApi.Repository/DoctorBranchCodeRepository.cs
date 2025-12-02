@@ -43,7 +43,7 @@ namespace HospitadentApi.Repository
                 using var db = new DBHelper(_connectionString);
                 db.ParametreEkle("@Id", Id);
 
-                using var rd = db.ExecuteReaderSql("select * from doctor_branch_codes where id = @Id");
+                using var rd = db.ExecuteReaderSql("select * from doctor_branch_codes where id=@Id and is_deleted=0 and is_dental=1");
                 if (!rd.Read())
                     return null;
 
@@ -76,7 +76,7 @@ namespace HospitadentApi.Repository
             try
             {
                 using var db = new DBHelper(_connectionString);
-                using var rd = db.ExecuteReaderSql("select * from doctor_branch_codes where is_deleted=0 and is_dental = 1");
+                using var rd = db.ExecuteReaderSql("select * from doctor_branch_codes where is_deleted=0 and is_dental=1");
 
                 // get ordinals once
                 var ordId = rd.GetOrdinal("id");

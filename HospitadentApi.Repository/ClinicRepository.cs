@@ -22,7 +22,7 @@ namespace HospitadentApi.Repository
             DBHelper db = new DBHelper(_connectionString);
             db.ParametreEkle("@Id", Id);
 
-            MySqlDataReader rd = db.ExecuteReaderSql("select * from clinics where id=@Id");
+            MySqlDataReader rd = db.ExecuteReaderSql("select * from clinics where id=@Id and isDeleted=0");
 
             Clinic _clinic = null;
             if (rd.Read())
