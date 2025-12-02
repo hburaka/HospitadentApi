@@ -69,6 +69,28 @@ namespace HospitadentApi.WebService.Controllers
                 throw new Exception("Error loading users", ex);
             }
         }
+
+        // POST api/user/search
+        [HttpPost("search", Name = "SearchUsers")]
+        public ActionResult<IEnumerable<User>> Search([FromBody] User searchCriteria)
+        {
+            if (searchCriteria == null)
+                return BadRequest("Search criteria must be provided.");
+
+            try
+            {
+                var users = _userRepository.GetByCriteria(searchCriteria.Id, searchCriteria.Name, searchCriteria.IsActive, searchCriteria.IsDeleted);
+
+                if (users == null || !users.Any())
+                    return NotFound("No users found matching the criteria.");
+
+                return Ok(users);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
     }
 }
 

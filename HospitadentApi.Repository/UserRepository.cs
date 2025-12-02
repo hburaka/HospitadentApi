@@ -3,6 +3,7 @@ using MySql.Data.MySqlClient;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace HospitadentApi.Repository
 {
@@ -125,22 +126,22 @@ namespace HospitadentApi.Repository
             {
                 using var db = new DBHelper(_connectionString);
                 using var rd = db.ExecuteReaderSql(@"
-SELECT
-  CASE
-    WHEN u.middle_name IS NULL OR u.middle_name = '' OR u.middle_name = '0' THEN u.first_name
-    WHEN CONCAT(' ', u.first_name, ' ') LIKE CONCAT('% ', u.middle_name, ' %') THEN u.first_name
-    ELSE CONCAT(u.first_name, ' ', u.middle_name)
-  END AS `Name`,
-  u.last_name AS `LastName`,
-  u.user_type,
-  u.clinic_id,
-  u.allowed_clinics,
-  u.department,
-  u.role,
-  u.show_in_calendar
-FROM users u
-WHERE u.isDeleted = 0
-");
+                    SELECT
+                      CASE
+                        WHEN u.middle_name IS NULL OR u.middle_name = '' OR u.middle_name = '0' THEN u.first_name
+                        WHEN CONCAT(' ', u.first_name, ' ') LIKE CONCAT('% ', u.middle_name, ' %') THEN u.first_name
+                        ELSE CONCAT(u.first_name, ' ', u.middle_name)
+                      END AS `Name`,
+                      u.last_name AS `LastName`,
+                      u.user_type,
+                      u.clinic_id,
+                      u.allowed_clinics,
+                      u.department,
+                      u.role,
+                      u.show_in_calendar
+                    FROM users u
+                    WHERE u.isDeleted = 0
+                    ");
 
                 var ordName = rd.GetOrdinal("Name");
                 var ordLastName = rd.GetOrdinal("LastName");
@@ -202,6 +203,132 @@ WHERE u.isDeleted = 0
             }
 
             return list;
+        }
+
+        public IList<User> GetByCriteria(int Id, string? Name, bool? IsActive, bool? IsDeleted)
+        {
+            var result = new List<User>();
+            using var db = new DBHelper(_connectionString);
+
+            var sb = new StringBuilder();
+            sb.Append(@"
+                SELECT
+                  u.id,
+                  CASE
+                    WHEN u.middle_name IS NULL OR u.middle_name = '' OR u.middle_name = '0' THEN u.first_name
+                    WHEN CONCAT(' ', u.first_name, ' ') LIKE CONCAT('% ', u.middle_name, ' %') THEN u.first_name
+                    ELSE CONCAT(u.first_name, ' ', u.middle_name)
+                  END AS `Name`,
+                  u.last_name AS `LastName`,
+                  u.user_type,
+                  u.clinic_id,
+                  u.allowed_clinics,
+                  u.department,
+                  u.role,
+                  u.show_in_calendar,
+                  u.CreatedDate,
+                  u.ModifiedDate,
+                  u.IsActive
+                FROM users u
+                WHERE u.isDeleted = 0
+                ");
+
+            if (Id != 0)
+            {
+                db.ParametreEkle("@Id", Id);
+                sb.Append(" AND u.id = @Id");
+            }
+
+            if (!string.IsNullOrEmpty(Name))
+            {
+                db.ParametreEkle("@Name", Name);
+                sb.Append(" AND (u.first_name LIKE CONCAT('%', @Name, '%') OR u.last_name LIKE CONCAT('%', @Name, '%') OR CONCAT(u.first_name, ' ', u.middle_name) LIKE CONCAT('%', @Name, '%'))");
+            }
+
+            if (IsActive.HasValue)
+            {
+                // store boolean as 1/0 for MySQL tinyint(1) if needed
+                db.ParametreEkle("@IsActive", IsActive.Value ? 1 : 0);
+                sb.Append(" AND u.is_active = @IsActive");
+            }
+
+            if (IsDeleted.HasValue)
+            {
+                // store boolean as 1/0 for MySQL tinyint(1) if needed
+                db.ParametreEkle("@IsDeleted", IsDeleted.Value ? 1 : 0);
+                sb.Append(" AND u.isDeleted = @IsDeleted");
+            }
+
+            sb.Append(" ORDER BY `Name`");
+
+            using var rd = db.ExecuteReaderSql(sb.ToString());
+
+            // guard in case reader is null (DBHelper throws on error normally)
+            if (rd == null)
+                return result;
+
+            int ordId = rd.GetOrdinal("id");
+            int ordName = rd.GetOrdinal("Name");
+            int ordLastName = rd.GetOrdinal("LastName");
+            int ordUserType = rd.GetOrdinal("user_type");
+            int ordClinicId = rd.GetOrdinal("clinic_id");
+            int ordAllowedClinics = rd.GetOrdinal("allowed_clinics");
+            int ordDepartment = rd.GetOrdinal("department");
+            int ordRole = rd.GetOrdinal("role");
+            int ordShowInCalendar = rd.GetOrdinal("show_in_calendar");
+            int ordCreated = rd.GetOrdinal("CreatedDate");
+            int ordModified = rd.GetOrdinal("ModifiedDate");
+            int ordIsActive = rd.GetOrdinal("IsActive");
+
+            while (rd.Read())
+            {
+                var u = new User();
+
+                if (!rd.IsDBNull(ordId))
+                    u.Id = rd.GetInt32(ordId);
+
+                if (!rd.IsDBNull(ordName))
+                    u.Name = rd.GetString(ordName);
+
+                if (!rd.IsDBNull(ordLastName))
+                    u.LastName = rd.GetString(ordLastName);
+
+                if (!rd.IsDBNull(ordUserType))
+                    u.UserType = rd.GetInt32(ordUserType);
+
+                if (!rd.IsDBNull(ordClinicId))
+                    u.Clinic = new Clinic { Id = rd.GetInt32(ordClinicId) };
+
+                if (!rd.IsDBNull(ordAllowedClinics))
+                {
+                    var csv = rd.GetString(ordAllowedClinics);
+                    u.AllowedClinic = csv;
+                    var ids = ParseIdList(csv);
+                    u.AllowedClinics = ids.Select(i => new Clinic { Id = i }).ToList();
+                }
+
+                if (!rd.IsDBNull(ordDepartment))
+                    u.Department = new Department { Id = rd.GetInt32(ordDepartment) };
+
+                if (!rd.IsDBNull(ordRole))
+                    u.URole = new URole { Id = rd.GetInt32(ordRole) };
+
+                if (!rd.IsDBNull(ordShowInCalendar))
+                    u.ShowInCalender = rd.GetInt32(ordShowInCalendar);
+
+                if (!rd.IsDBNull(ordCreated))
+                    u.CreatedDate = rd.GetDateTime(ordCreated);
+                // ModifiedDate is nullable on EntityBase
+                if (!rd.IsDBNull(ordModified))
+                    u.ModifiedDate = rd.GetDateTime(ordModified);
+
+                if (!rd.IsDBNull(ordIsActive))
+                    u.IsActive = rd.GetBoolean(ordIsActive);
+
+                result.Add(u);
+            }
+
+            return result;
         }
 
         public int Update(User instance)
