@@ -70,20 +70,19 @@ namespace HospitadentApi.WebService.Controllers
             }
         }
 
-        // POST api/user/search
-        [HttpPost("search", Name = "SearchUsers")]
-        public ActionResult<IEnumerable<User>> Search([FromBody] User searchCriteria)
+        // GET api/user/search
+        [HttpGet("search", Name = "SearchUsers")]
+        public ActionResult<IEnumerable<User>> Search(
+            [FromQuery] int? id,
+            [FromQuery] string? name,
+            [FromQuery] bool? isActive,
+            [FromQuery] bool? isDeleted)
         {
-            if (searchCriteria == null)
-                return BadRequest("Search criteria must be provided.");
-
             try
             {
-                var users = _userRepository.GetByCriteria(searchCriteria.Id, searchCriteria.Name, searchCriteria.IsActive, searchCriteria.IsDeleted);
-
+                var users = _userRepository.GetByCriteria(id.GetValueOrDefault(), name, isActive, isDeleted);
                 if (users == null || !users.Any())
                     return NotFound("No users found matching the criteria.");
-
                 return Ok(users);
             }
             catch (Exception ex)

@@ -138,7 +138,10 @@ namespace HospitadentApi.Repository
                       u.allowed_clinics,
                       u.department,
                       u.role,
-                      u.show_in_calendar
+                      u.show_in_calendar,
+                      u.saved_on,
+                    u.updated_on,
+                    u.is_active
                     FROM users u
                     WHERE u.isDeleted = 0
                     ");
@@ -226,9 +229,9 @@ namespace HospitadentApi.Repository
                   u.department,
                   u.role,
                   u.show_in_calendar,
-                  u.CreatedDate,
-                  u.ModifiedDate,
-                  u.IsActive
+                  u.saved_on,
+                  u.updated_on,
+                  u.is_active
                 FROM users u
                 WHERE u.isDeleted = 0
                 ");
@@ -276,9 +279,9 @@ namespace HospitadentApi.Repository
             int ordDepartment = rd.GetOrdinal("department");
             int ordRole = rd.GetOrdinal("role");
             int ordShowInCalendar = rd.GetOrdinal("show_in_calendar");
-            int ordCreated = rd.GetOrdinal("CreatedDate");
-            int ordModified = rd.GetOrdinal("ModifiedDate");
-            int ordIsActive = rd.GetOrdinal("IsActive");
+            int ordCreated = rd.GetOrdinal("saved_on");
+            int ordModified = rd.GetOrdinal("updated_on");
+            int ordIsActive = rd.GetOrdinal("is_active");
 
             while (rd.Read())
             {
