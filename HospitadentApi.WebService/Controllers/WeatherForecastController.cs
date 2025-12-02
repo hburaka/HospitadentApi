@@ -30,5 +30,6 @@ namespace HospitadentApi.WebService.Controllers
             })
             .ToArray();
         }
+
     }
 }

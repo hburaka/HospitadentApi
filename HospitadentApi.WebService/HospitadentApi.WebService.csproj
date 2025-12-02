@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\HospitadentApi.Entity\HospitadentApi.Entity.csproj" />
+    <ProjectReference Include="..\HospitadentApi.Repository\HospitadentApi.Repository.csproj" />
   </ItemGroup>
 
 </Project>

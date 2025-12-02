@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HospitadentApi.Entity", "Ho
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HospitadentApi.WebService", "HospitadentApi.WebService\HospitadentApi.WebService.csproj", "{740EA82C-E3D2-4A4D-A330-EDC8FF5566B7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HospitadentApi.Repository", "HospitadentApi.Repository\HospitadentApi.Repository.csproj", "{733A5BD0-A995-4593-8738-148640EF0BDB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{740EA82C-E3D2-4A4D-A330-EDC8FF5566B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{740EA82C-E3D2-4A4D-A330-EDC8FF5566B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{740EA82C-E3D2-4A4D-A330-EDC8FF5566B7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{733A5BD0-A995-4593-8738-148640EF0BDB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{733A5BD0-A995-4593-8738-148640EF0BDB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{733A5BD0-A995-4593-8738-148640EF0BDB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{733A5BD0-A995-4593-8738-148640EF0BDB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
