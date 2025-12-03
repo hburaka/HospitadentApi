@@ -293,5 +293,28 @@ namespace HospitadentApi.Repository
 
             return null;
         }
+
+
+        /// <summary>
+        /// Safely reads a date/datetime column from MySqlDataReader treating MySQL zero-dates as null.
+        /// </summary>
+        public static DateTime? SafeGetNullableDate(this MySqlDataReader rd, int ord)
+        {
+            var val = rd.GetValue(ord);
+            if (val == null || val == DBNull.Value) return null;
+            var s = val.ToString();
+            if (string.IsNullOrEmpty(s) || s.StartsWith("0000-00-00")) return null;
+            if (DateTime.TryParse(s, out var dt)) return dt;
+            return null;
+        }
+
+        /// <summary>
+        /// Reads a datetime column, returns defaultValue when value is null / zero-date / invalid.
+        /// </summary>
+        public static DateTime SafeGetDateTimeOrDefault(this MySqlDataReader rd, int ord, DateTime defaultValue)
+        {
+            var v = rd.SafeGetNullableDate(ord);
+            return v ?? defaultValue;
+        }
     }
 }

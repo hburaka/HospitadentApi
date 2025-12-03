@@ -65,19 +65,8 @@ namespace HospitadentApi.Repository
             return department;
         }
 
-        public int Insert(Department instance)
-        {
-            throw new NotImplementedException();
-        }
-
-        public int Delete(Department instance)
-        {
-            throw new NotImplementedException();
-        }
-
-        public int Update(Department instance)
-        {
-            throw new NotImplementedException();
-        }
+        public int Delete(Department instance) => throw new NotImplementedException();
+        public int Insert(Department instance) => throw new NotImplementedException();
+        public int Update(Department instance) => throw new NotImplementedException();
     }
 }

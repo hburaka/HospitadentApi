@@ -94,19 +94,8 @@ namespace HospitadentApi.Repository
             return list;
         }
 
-        public int Update(URole instance)
-        {
-            throw new NotImplementedException();
-        }
-
-        public int Delete(URole instance)
-        {
-            throw new NotImplementedException();
-        }
-
-        public int Insert(URole instance)
-        {
-            throw new NotImplementedException();
-        }
+        public int Delete(URole instance) => throw new NotImplementedException();
+        public int Insert(URole instance) => throw new NotImplementedException();
+        public int Update(URole instance) => throw new NotImplementedException();
     }
 }
