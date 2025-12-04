@@ -15,10 +15,6 @@ namespace HospitadentApi.Repository
                 throw new ArgumentException("Connection string must be provided.", nameof(connectionString));
             _connectionString = connectionString;
         }
-
-        /// <summary>
-        /// Belirli bir doktor için, verilen tarih aralığındaki randevuları getirir.
-        /// </summary>
         public IList<Appointment> GetByDoctorAndDateRange(int doctorId, DateTime from, DateTime to)
         {
             if (doctorId <= 0)
