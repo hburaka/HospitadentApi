@@ -370,7 +370,12 @@ namespace HospitadentApi.Repository
             }
             catch (Exception ex)
             {
-                throw new Exception($"Error querying user working schedule for userId {userId}", ex);
+                var errorMessage = $"Error querying user working schedule for userId {userId}";
+                if (ex.InnerException != null)
+                    errorMessage += $". Inner exception: {ex.InnerException.Message}";
+                else
+                    errorMessage += $". Exception: {ex.Message}";
+                throw new Exception(errorMessage, ex);
             }
         }
 

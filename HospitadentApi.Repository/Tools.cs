@@ -175,6 +175,53 @@ namespace HospitadentApi.Repository
 
             return null;
         }
+        public static TimeSpan? GetTimeSpan(this MySqlDataReader reader, string column)
+        {
+            try
+            {
+                var val = reader[column];
+                if (val == null || val == DBNull.Value)
+                    return null;
+
+                if (val is TimeSpan ts)
+                    return ts;
+
+                // Try to parse as TimeSpan
+                if (TimeSpan.TryParse(val.ToString(), out var parsed))
+                    return parsed;
+
+                return null;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+        public static TimeSpan? GetTimeSpan(this MySqlDataReader reader, int ordinal)
+        {
+            try
+            {
+                if (reader.IsDBNull(ordinal))
+                    return null;
+
+                var val = reader.GetValue(ordinal);
+                if (val == null || val == DBNull.Value)
+                    return null;
+
+                if (val is TimeSpan ts)
+                    return ts;
+
+                // Try to parse as TimeSpan
+                if (TimeSpan.TryParse(val.ToString(), out var parsed))
+                    return parsed;
+
+                return null;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
 
         public static decimal GetDecimal(this SqlDataReader reader, string column)
         {

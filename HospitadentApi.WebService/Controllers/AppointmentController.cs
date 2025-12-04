@@ -37,7 +37,18 @@ namespace HospitadentApi.WebService.Controllers
             {
                 var start = from?.Date ?? Tools.GetTurkiyeDate().Date;
                 var end = to?.Date ?? start.AddDays(14);
-                if (end < start) end = start;
+
+                // Kullanıcı hem başlangıç hem bitiş tarihi gönderdiyse, bitişin başlangıçtan önce olmaması gerekir.
+                if (from.HasValue && to.HasValue && to.Value < from.Value)
+                    return BadRequest("Bitiş tarihi, başlangıç tarihinden önce olamaz.");
+
+                if (end < start)
+                    end = start;
+
+                // Güvenlik ve performans için, istenen tarih aralığını örnek olarak en fazla 1 yıl ile sınırlandırıyoruz.
+                var maxDays = 365;
+                if ((end - start).TotalDays > maxDays)
+                    return BadRequest($"Tarih aralığı en fazla {maxDays} gün olabilir. Lütfen daha kısa bir aralık seçin.");
 
                 var list = _appointmentRepository.GetByCriteria(
                     doctorId: doctorId,
@@ -51,13 +62,18 @@ namespace HospitadentApi.WebService.Controllers
                 );
 
                 if (list == null || list.Count == 0)
-                    return NotFound("No appointments found for the given criteria.");
+                    return NotFound("Bu kriterlere uygun herhangi bir randevu bulunamadı.");
 
                 return Ok(list);
             }
-            catch (Exception ex)
+            catch (ArgumentException ex)
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                return BadRequest(ex.Message);
+            }
+            catch (Exception)
+            {
+                // Log exception here (consider using ILogger)
+                return StatusCode(500, "Randevu sorgulama sırasında bir hata oluştu.");
             }
         }
 
@@ -88,9 +104,14 @@ namespace HospitadentApi.WebService.Controllers
 
                 return Ok(list);
             }
-            catch (Exception ex)
+            catch (ArgumentException ex)
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                return BadRequest(ex.Message);
+            }
+            catch (Exception)
+            {
+                // Log exception here (consider using ILogger)
+                return StatusCode(500, "Doktor randevuları sorgulanırken bir hata oluştu.");
             }
         }
     }
