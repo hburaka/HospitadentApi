@@ -8,6 +8,6 @@ namespace HospitadentApi.Entity
 {
     public class DoctorBranchCode : EntityBase
     {
-        public string Name { get; set; }
+        public string? Name { get; set; }
     }
 }

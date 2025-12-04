@@ -8,9 +8,9 @@ namespace HospitadentApi.Entity
 {
     public class URole : EntityBase
     {
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
-        public Department Department { get; set; }
+        public Department? Department { get; set; }
     }
 
 }

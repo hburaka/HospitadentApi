@@ -15,6 +15,9 @@ namespace HospitadentApi.Entity
 
         public int Id { get; set; }
 
+        public DateTime saved_on { get; set; }
+        public DateTime? updated_on { get; set; }
+
         //[DisplayFormat(ConvertEmptyStringToNull = true, NullDisplayText = "00.00.0000 00:00", DataFormatString = "{0:dd.MM.yyyy HH:mm}")  ]
         public DateTime CreatedDate { get; set; }
 
@@ -24,6 +27,8 @@ namespace HospitadentApi.Entity
         [Display(Name = "Aktif mi ?")]
         public bool? IsActive { get; set; }
 
+        public bool? IsDeleted { get; set; }
+
         #endregion
 
         public override int GetHashCode()
@@ -31,9 +36,9 @@ namespace HospitadentApi.Entity
             return Id.GetHashCode() * 57;
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
-            EntityBase that = obj as EntityBase;
+            EntityBase? that = obj as EntityBase;
             if (that != null && that.Id == this.Id)
                 return true;
             return false;

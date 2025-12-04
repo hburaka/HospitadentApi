@@ -8,7 +8,7 @@ namespace HospitadentApi.Entity
 {
 public class Department : EntityBase
     {
-        public string Name { get; set; }
+        public string? Name { get; set; }
     }
 
 }

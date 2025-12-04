@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace HospitadentApi.Entity
 {
-    public class Patient :IEntity
+    public class Patient : EntityBase
     {
         public string? Name { get; set; }
         public string? LastName { get; set; }

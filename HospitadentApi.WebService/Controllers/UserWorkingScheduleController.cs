@@ -23,18 +23,32 @@ namespace HospitadentApi.WebService.Controllers
         public ActionResult<UserWorkingSchedule> Get(int id)
         {
             if (id <= 0) return BadRequest("Id must be provided and greater than zero.");
-            var item = _repo.Load(id);
-            if (item == null) return NotFound();
-            return Ok(item);
+            try
+            {
+                var item = _repo.Load(id);
+                if (item == null) return NotFound($"UserWorkingSchedule with id {id} not found.");
+                return Ok(item);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
         }
 
         // GET api/userworkingschedule/all
         [HttpGet("all", Name = "GetAllWorkingSchedules")]
         public ActionResult<IEnumerable<UserWorkingSchedule>> GetAll()
         {
-            var list = _repo.LoadAll();
-            if (list == null || list.Count == 0) return NotFound("No schedules found.");
-            return Ok(list);
+            try
+            {
+                var list = _repo.LoadAll();
+                if (list == null || list.Count == 0) return NotFound("No schedules found.");
+                return Ok(list);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
         }
 
         // GET api/userworkingschedule/user/{userId}
@@ -42,9 +56,16 @@ namespace HospitadentApi.WebService.Controllers
         public ActionResult<IEnumerable<UserWorkingSchedule>> GetByUser(int userId)
         {
             if (userId <= 0) return BadRequest("UserId must be provided and greater than zero.");
-            var list = _repo.GetByUser(userId);
-            if (list == null || list.Count == 0) return NotFound();
-            return Ok(list);
+            try
+            {
+                var list = _repo.GetByUser(userId);
+                if (list == null || list.Count == 0) return NotFound($"No schedules found for user {userId}.");
+                return Ok(list);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
         }
 
         // POST api/userworkingschedule/criteria

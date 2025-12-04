@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace HospitadentApi.Entity
 {
-    public class Appointment : IEntity
+    public class Appointment : EntityBase
     {
-        public Clinic Clinic { get; set; }
+        public Clinic? Clinic { get; set; }
     }
 }

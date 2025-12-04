@@ -300,12 +300,43 @@ namespace HospitadentApi.Repository
         /// </summary>
         public static DateTime? SafeGetNullableDate(this MySqlDataReader rd, int ord)
         {
-            var val = rd.GetValue(ord);
-            if (val == null || val == DBNull.Value) return null;
-            var s = val.ToString();
-            if (string.IsNullOrEmpty(s) || s.StartsWith("0000-00-00")) return null;
-            if (DateTime.TryParse(s, out var dt)) return dt;
-            return null;
+            try
+            {
+                if (rd.IsDBNull(ord))
+                    return null;
+
+                var val = rd.GetValue(ord);
+                if (val == null || val == DBNull.Value)
+                    return null;
+
+                // Handle MySqlDateTime type (handles invalid dates like 0000-00-00)
+                if (val is MySqlDateTime mySqlDt)
+                    return mySqlDt.IsValidDateTime ? mySqlDt.GetDateTime() : (DateTime?)null;
+
+                // Handle regular DateTime
+                if (val is DateTime dt)
+                    return dt;
+
+                // Try parsing as string
+                var s = val.ToString();
+                if (string.IsNullOrEmpty(s) || s.StartsWith("0000-00-00"))
+                    return null;
+
+                if (DateTime.TryParse(s, out var parsed))
+                    return parsed;
+
+                return null;
+            }
+            catch (MySqlConversionException)
+            {
+                // MySQL invalid date (0000-00-00) conversion exception
+                return null;
+            }
+            catch (Exception)
+            {
+                // Any other exception, return null
+                return null;
+            }
         }
 
         /// <summary>
