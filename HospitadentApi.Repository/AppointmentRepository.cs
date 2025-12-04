@@ -50,6 +50,8 @@ namespace HospitadentApi.Repository
                         usrdoctor.first_name as doctorFirstName,
                         usrdoctor.last_name as doctorLastName,
                         a.patient_id,
+                        p.first_name as patientName,
+                        p.last_name as patientLastName,
                         a.appointment_type,
                         att.type_name AS appointment_type_name,
                         a.appointment_status,
@@ -83,6 +85,7 @@ namespace HospitadentApi.Repository
                     LEFT JOIN appointment_status ass ON a.appointment_status = ass.id
                     LEFT JOIN treatment_types tt ON a.treatment_type = tt.id
                     left join users usrdoctor on a.doctor_id = usrdoctor.id
+                    LEFT JOIN patients p ON a.patient_id = p.id
                     WHERE a.deleted_by = 0
                 ");
 
@@ -137,6 +140,8 @@ namespace HospitadentApi.Repository
                 int ordDoctorFirstName = rd.GetOrdinal("doctorFirstName");
                 int ordDoctorLastName = rd.GetOrdinal("doctorLastName");
                 int ordPatientId = rd.GetOrdinal("patient_id");
+                int ordpatientName = rd.GetOrdinal("patientName");
+                int ordpatientLastName = rd.GetOrdinal("patientLastName");
                 int ordAppointmentType = rd.GetOrdinal("appointment_type");
                 int ordAppointmentTypeName = rd.GetOrdinal("appointment_type_name");
                 int ordAppointmentStatus = rd.GetOrdinal("appointment_status");
@@ -173,9 +178,13 @@ namespace HospitadentApi.Repository
 
                         // relations
                         Clinic = rd.IsDBNull(ordClinicId) ? null : new Clinic { Id = rd.GetInt32(ordClinicId), Name = rd.GetString(ordClinicName) },
-                        User = rd.IsDBNull(ordDoctorId) ? null : new User { Id = rd.GetInt32(ordDoctorId) , Name = rd.GetString(ordDoctorFirstName), LastName = rd.GetString(ordDoctorLastName) },
-                        Patient = rd.IsDBNull(ordPatientId) ? null : new Patient { Id = rd.GetInt32(ordPatientId) },
-
+                        User = rd.IsDBNull(ordDoctorId) ? null : new User { Id = rd.GetInt32(ordDoctorId), Name = rd.GetString(ordDoctorFirstName), LastName = rd.GetString(ordDoctorLastName) },
+                        Patient = rd.IsDBNull(ordPatientId) ? null : new Patient
+                        {
+                            Id = rd.GetInt32(ordPatientId),
+                            Name = rd.IsDBNull(ordpatientName) ? null : rd.GetString(ordpatientName),
+                            LastName = rd.IsDBNull(ordpatientLastName) ? null : rd.GetString(ordpatientLastName)
+                        },
                         // nested type objects (only small projection)
                         AppointmentType = rd.IsDBNull(ordAppointmentType) ? null : new AppointmentType
                         {
