@@ -3,42 +3,58 @@ using MySql.Data.MySqlClient;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 
 namespace HospitadentApi.Repository
 {
     public class ClinicRepository : IRepository<Clinic>
     {
         private readonly string _connectionString;
+        private readonly ILogger<ClinicRepository> _logger;
 
-        public ClinicRepository(string connectionString)
+        public ClinicRepository(string connectionString, ILogger<ClinicRepository> logger)
         {
             if (string.IsNullOrWhiteSpace(connectionString))
                 throw new ArgumentException("Connection string must be provided.", nameof(connectionString));
             _connectionString = connectionString;
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public Clinic? Load(int Id)
         {
-            DBHelper db = new DBHelper(_connectionString);
-            db.ParametreEkle("@Id", Id);
-
-            MySqlDataReader rd = db.ExecuteReaderSql("select * from clinics where id=@Id and isDeleted=0");
-
-            Clinic _clinic = null;
-            if (rd.Read())
+            _logger.LogDebug("Load called: Id={Id}", Id);
+            try
             {
-                _clinic = new Clinic();
-                _clinic.Id = rd.GetInt32("id");
-                _clinic.Name = rd.GetString("clinic_name");
-                _clinic.Status = rd.GetBoolean("status");
-                _clinic.IsDeleted = rd.GetBoolean("isDeleted");
+                using var db = new DBHelper(_connectionString);
+                db.ParametreEkle("@Id", Id);
+
+                using var rd = db.ExecuteReaderSql("select * from clinics where id=@Id and isDeleted=0");
+                Clinic? _clinic = null;
+                if (rd.Read())
+                {
+                    _clinic = new Clinic();
+                    _clinic.Id = rd.GetInt32("id");
+                    _clinic.Name = rd.GetString("clinic_name");
+                    _clinic.Status = rd.GetBoolean("status");
+                    _clinic.IsDeleted = rd.GetBoolean("isDeleted");
+                    _logger.LogInformation("Loaded clinic Id={Id} Name={Name}", _clinic.Id, _clinic.Name);
+                }
+                else
+                {
+                    _logger.LogInformation("Clinic not found: Id={Id}", Id);
+                }
+                return _clinic;
             }
-            rd.Close();
-            return _clinic;
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading clinic Id={Id}", Id);
+                throw new Exception($"Error loading clinic Id {Id}", ex);
+            }
         }
 
         public IList<Clinic> LoadAll()
         {
+            _logger.LogDebug("LoadAll called");
             var clinics = new List<Clinic>();
             using var db = new DBHelper(_connectionString);
             try
@@ -60,9 +76,12 @@ namespace HospitadentApi.Repository
                     };
                     clinics.Add(c);
                 }
+
+                _logger.LogInformation("LoadAll returned {Count} clinics", clinics.Count);
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error loading clinics");
                 throw new Exception("Error loading clinics", ex);
             }
             return clinics;
@@ -70,14 +89,21 @@ namespace HospitadentApi.Repository
 
         public IList<Clinic> GetByIds(IEnumerable<int>? ids)
         {
+            _logger.LogDebug("GetByIds called: ids={Ids}", ids == null ? "null" : string.Join(",", ids));
             var result = new List<Clinic>();
             if (ids == null)
+            {
+                _logger.LogWarning("GetByIds called with null ids");
                 return result;
+            }
 
             // Normalize id list: remove duplicates and invalid ids
             var idList = ids.Where(i => i > 0).Distinct().ToList();
             if (!idList.Any())
+            {
+                _logger.LogWarning("GetByIds has no valid ids after normalization");
                 return result;
+            }
 
             try
             {
@@ -94,7 +120,6 @@ namespace HospitadentApi.Repository
 
                 var inClause = string.Join(", ", paramNames);
 
-                // Select the columns you need. Adjust column names as per your schema.
                 var sql = $@"
                     SELECT
                       c.id,
@@ -105,15 +130,16 @@ namespace HospitadentApi.Repository
 
                 using var rd = db.ExecuteReaderSql(sql);
                 if (rd == null)
+                {
+                    _logger.LogWarning("GetByIds reader returned null");
                     return result;
+                }
 
                 var ordId = rd.GetOrdinal("id");
                 var ordName = rd.GetOrdinal("clinic_name");
                 int ordIsActive = -1;
-                // optional columns may not exist in all schemas, guard with try/catch for GetOrdinal
                 try { ordIsActive = rd.GetOrdinal("is_active"); } catch { ordIsActive = -1; }
 
-                // Read into dictionary keyed by id so we can preserve input order later
                 var map = new Dictionary<int, Clinic>(idList.Count);
                 while (rd.Read())
                 {
@@ -132,15 +158,17 @@ namespace HospitadentApi.Repository
                     map[id] = clinic;
                 }
 
-                // Return clinics in the same order as requested ids
                 foreach (var id in idList)
                 {
                     if (map.TryGetValue(id, out var clinic))
                         result.Add(clinic);
                 }
+
+                _logger.LogInformation("GetByIds returning {Count} clinics for requested {RequestedCount} ids", result.Count, idList.Count);
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error loading clinics by ids");
                 throw new Exception("Error loading clinics by ids", ex);
             }
 

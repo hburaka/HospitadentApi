@@ -1,9 +1,10 @@
-using HospitadentApi.Entity;
+                    using HospitadentApi.Entity;
 using MySql.Data.MySqlClient;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Microsoft.Extensions.Logging;
 
 namespace HospitadentApi.Repository
 {
@@ -11,13 +12,15 @@ namespace HospitadentApi.Repository
     {
         private readonly ClinicRepository _clinicRepo;
         private readonly string _connectionString;
+        private readonly ILogger<UserRepository> _logger;
 
-        public UserRepository(string connectionString, ClinicRepository clinicRepo)
+        public UserRepository(string connectionString, ClinicRepository clinicRepo, ILogger<UserRepository> logger)
         {
             if (string.IsNullOrWhiteSpace(connectionString))
                 throw new ArgumentException("Connection string must be provided.", nameof(connectionString));
             _connectionString = connectionString;
             _clinicRepo = clinicRepo ?? throw new ArgumentNullException(nameof(clinicRepo));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         private static List<int> ParseIdList(string? csv)
@@ -36,6 +39,7 @@ namespace HospitadentApi.Repository
 
         public User? Load(int Id)
         {
+            _logger.LogDebug("Load called: Id={Id}", Id);
             try
             {
                 using var db = new DBHelper(_connectionString);
@@ -70,7 +74,10 @@ namespace HospitadentApi.Repository
                     ");
 
                 if (!rd.Read())
+                {
+                    _logger.LogInformation("User not found: Id={Id}", Id);
                     return null;
+                }
 
                 var ordName = rd.GetOrdinal("Name");
                 var ordLastName = rd.GetOrdinal("LastName");
@@ -161,16 +168,19 @@ namespace HospitadentApi.Repository
                 if (!rd.IsDBNull(ordShowInCalendar))
                     item.ShowInCalender = rd.GetInt32(ordShowInCalendar);
 
+                _logger.LogInformation("Loaded user Id={Id} Name={Name}", item.Id, item.Name);
                 return item;
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error loading User Id={Id}", Id);
                 throw new Exception($"Error loading User with Id {Id}", ex);
             }
         }
 
         public IList<User> LoadAll()
         {
+            _logger.LogDebug("LoadAll called");
             var list = new List<User>();
             try
             {
@@ -303,9 +313,12 @@ namespace HospitadentApi.Repository
 
                     list.Add(item);
                 }
+
+                _logger.LogInformation("LoadAll returned {Count} users", list.Count);
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error loading User list");
                 throw new Exception("Error loading User list", ex);
             }
 
@@ -314,6 +327,7 @@ namespace HospitadentApi.Repository
 
         public IList<User> GetByCriteria(int Id, string? Name, bool? IsActive, bool? IsDeleted)
         {
+            _logger.LogDebug("GetByCriteria called: Id={Id} Name={Name} IsActive={IsActive} IsDeleted={IsDeleted}", Id, Name, IsActive, IsDeleted);
             var result = new List<User>();
             using var db = new DBHelper(_connectionString);
 
@@ -376,7 +390,10 @@ namespace HospitadentApi.Repository
 
             using var rd = db.ExecuteReaderSql(sb.ToString());
             if (rd == null)
+            {
+                _logger.LogInformation("GetByCriteria returned no rows");
                 return result;
+            }
 
             int ordId = rd.GetOrdinal("id");
             int ordName = rd.GetOrdinal("Name");
@@ -477,6 +494,7 @@ namespace HospitadentApi.Repository
                 result.Add(u);
             }
 
+            _logger.LogInformation("GetByCriteria returning {Count} users", result.Count);
             return result;
         }
 
