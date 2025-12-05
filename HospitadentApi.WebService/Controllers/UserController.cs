@@ -44,31 +44,31 @@ namespace HospitadentApi.WebService.Controllers
             }
         }
 
-        // GET api/user/all
-        [HttpGet("all", Name = "GetUsers")]
-        public ActionResult<IEnumerable<User>> GetAll()
-        {
-            try
-            {
-                if (_userRepository == null)
-                    throw new InvalidOperationException("User repository is not initialized.");
+        //// GET api/user/all
+        //[HttpGet("all", Name = "GetUsers")]
+        //public ActionResult<IEnumerable<User>> GetAll()
+        //{
+        //    try
+        //    {
+        //        if (_userRepository == null)
+        //            throw new InvalidOperationException("User repository is not initialized.");
 
-                var users = _userRepository.LoadAll() ?? new List<User>();
+        //        var users = _userRepository.LoadAll() ?? new List<User>();
 
-                if (!users.Any())
-                    return NotFound("No users found.");
+        //        if (!users.Any())
+        //            return NotFound("No users found.");
 
-                return Ok(users);
-            }
-            catch (InvalidOperationException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("Error loading users", ex);
-            }
-        }
+        //        return Ok(users);
+        //    }
+        //    catch (InvalidOperationException)
+        //    {
+        //        throw;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        throw new Exception("Error loading users", ex);
+        //    }
+        //}
 
         // GET api/user/search
         [HttpGet("search", Name = "SearchUsers")]
