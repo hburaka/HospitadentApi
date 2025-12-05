@@ -1,23 +1,22 @@
 using HospitadentApi.Entity;
 using System.Text;
+using Microsoft.Extensions.Logging;
 
 namespace HospitadentApi.Repository
 {
     public class AppointmentRepository : IRepository<Appointment>
     {
         private readonly string _connectionString;
+        private readonly ILogger<AppointmentRepository> _logger;
 
-        public AppointmentRepository(string connectionString)
+        public AppointmentRepository(string connectionString, ILogger<AppointmentRepository> logger)
         {
             if (string.IsNullOrWhiteSpace(connectionString))
                 throw new ArgumentException("Connection string must be provided.", nameof(connectionString));
             _connectionString = connectionString;
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        /// <summary>
-        /// Query appointments with optional filters. Matches the Appointment entity shape.
-        /// clinicId uses equality (a.clinic_id = @clinic_id) as requested.
-        /// </summary>
         public IList<Appointment> GetByCriteria(
             int? doctorId = null,
             DateTime? from = null,
@@ -33,6 +32,9 @@ namespace HospitadentApi.Repository
             var start = from?.Date ?? Tools.GetTurkiyeDate().Date;
             var end = to?.Date ?? start;
             if (end < start) end = start;
+
+            _logger.LogDebug("GetByCriteria called: doctorId={DoctorId}, from={From}, to={To}, clinicId={ClinicId}, appointmentStatus={Status}, appointmentType={Type}, treatmentType={Treatment}, isConfirmed={IsConfirmed}",
+                doctorId, start, end, clinicId, appointmentStatus, appointmentType, treatmentType, isConfirmed);
 
             try
             {
@@ -182,7 +184,7 @@ namespace HospitadentApi.Repository
                         Patient = rd.IsDBNull(ordPatientId) ? null : new Patient
                         {
                             Id = rd.GetInt32(ordPatientId),
-                            Name = rd.IsDBNull(ordpatientName) ? null : rd.GetString(ordpatientName),
+                            FirstName = rd.IsDBNull(ordpatientName) ? null : rd.GetString(ordpatientName),
                             LastName = rd.IsDBNull(ordpatientLastName) ? null : rd.GetString(ordpatientLastName)
                         },
                         // nested type objects (only small projection)
@@ -234,6 +236,7 @@ namespace HospitadentApi.Repository
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error querying appointments by criteria");
                 throw new Exception("Error querying appointments by criteria", ex);
             }
 

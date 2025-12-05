@@ -5,22 +5,26 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Microsoft.Extensions.Logging;
 
 namespace HospitadentApi.Repository
 {
     public class UserWorkingScheduleRepository : IRepository<UserWorkingSchedule>
     {
         private readonly string _connectionString;
+        private readonly ILogger<UserWorkingScheduleRepository> _logger;
 
-        public UserWorkingScheduleRepository(string connectionString)
+        public UserWorkingScheduleRepository(string connectionString, ILogger<UserWorkingScheduleRepository> logger)
         {
             if (string.IsNullOrWhiteSpace(connectionString))
                 throw new ArgumentException("Connection string must be provided.", nameof(connectionString));
             _connectionString = connectionString;
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public UserWorkingSchedule? Load(int Id)
         {
+            _logger.LogDebug("Load called: Id={Id}", Id);
             try
             {
                 using var db = new DBHelper(_connectionString);
@@ -73,12 +77,14 @@ namespace HospitadentApi.Repository
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error loading UserWorkingSchedule with Id {Id}", Id);
                 throw new Exception($"Error loading UserWorkingSchedule with Id {Id}", ex);
             }
         }
 
         public IList<UserWorkingSchedule> LoadAll()
         {
+            _logger.LogDebug("LoadAll called");
             var list = new List<UserWorkingSchedule>();
             try
             {
@@ -127,6 +133,7 @@ namespace HospitadentApi.Repository
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error loading UserWorkingSchedule list");
                 throw new Exception("Error loading UserWorkingSchedule list", ex);
             }
             return list;
@@ -134,6 +141,7 @@ namespace HospitadentApi.Repository
 
         public IList<UserWorkingSchedule> GetByUser(int userId)
         {
+            _logger.LogDebug("GetByUser called: UserId={UserId}", userId);
             var result = new List<UserWorkingSchedule>();
             using var db = new DBHelper(_connectionString);
             db.ParametreEkle("@UserId", userId);
@@ -186,6 +194,7 @@ namespace HospitadentApi.Repository
 
         public IList<UserWorkingSchedule> GetByCriteria(int userId, DateTime? from = null, DateTime? to = null, int? clinicId = null)
         {
+            _logger.LogDebug("GetByCriteria called: userId={UserId}, from={From}, to={To}, clinicId={ClinicId}", userId, from, to, clinicId);
             if (userId <= 0) throw new ArgumentException("userId must be provided and greater than zero.", nameof(userId));
 
             var result = new List<UserWorkingSchedule>();
@@ -370,6 +379,7 @@ namespace HospitadentApi.Repository
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error querying user working schedule for userId {UserId}", userId);
                 var errorMessage = $"Error querying user working schedule for userId {userId}";
                 if (ex.InnerException != null)
                     errorMessage += $". Inner exception: {ex.InnerException.Message}";

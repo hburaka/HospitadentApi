@@ -18,11 +18,11 @@ namespace HospitadentApi.Entity
         public DateTime saved_on { get; set; }
         public DateTime? updated_on { get; set; }
 
-        //[DisplayFormat(ConvertEmptyStringToNull = true, NullDisplayText = "00.00.0000 00:00", DataFormatString = "{0:dd.MM.yyyy HH:mm}")  ]
-        public DateTime CreatedDate { get; set; }
+        ////[DisplayFormat(ConvertEmptyStringToNull = true, NullDisplayText = "00.00.0000 00:00", DataFormatString = "{0:dd.MM.yyyy HH:mm}")  ]
+        //public DateTime CreatedDate { get; set; }
 
-        //[DisplayFormat(ConvertEmptyStringToNull = true, NullDisplayText = "00.00.0000 00:00", DataFormatString = "{0:dd.MM.yyyy HH:mm}")]
-        public DateTime? ModifiedDate { get; set; }
+        ////[DisplayFormat(ConvertEmptyStringToNull = true, NullDisplayText = "00.00.0000 00:00", DataFormatString = "{0:dd.MM.yyyy HH:mm}")]
+        //public DateTime? ModifiedDate { get; set; }
 
         [Display(Name = "Aktif mi ?")]
         public bool? IsActive { get; set; }
