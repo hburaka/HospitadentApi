@@ -90,7 +90,7 @@ namespace HospitadentApi.Repository
         // - fullName (single string containing name and/or surname)
         // - mobile (raw like "5321112233" or with formatting)
         // - tcNo (identity number)
-        public IList<Patient> Search(
+        public IList<Patient> GetByCriteria(
             int? id = null,
             string? fullName = null,
             string? mobile = null,

@@ -74,7 +74,7 @@ namespace HospitadentApi.WebService.Controllers
                 _logger.LogInformation("Searching patients id={Id} fullName={FullName} mobile={Mobile} tcNo={TcNo} clinicId={ClinicId} limit={Limit}",
                     id, fullName, mobile, tcNo, clinicId, limit);
 
-                var list = _patientRepository.Search(
+                var list = _patientRepository.GetByCriteria(
                     id: id,
                     fullName: fullName,
                     mobile: mobile,

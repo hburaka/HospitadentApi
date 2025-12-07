@@ -1,9 +1,10 @@
 using HospitadentApi.Entity;
-using HospitadentApi.Repository;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using HospitadentApi.Repository;
 
 namespace HospitadentApi.WebService.Controllers
 {
@@ -12,35 +13,42 @@ namespace HospitadentApi.WebService.Controllers
     public class DoctorBranchCodeController : ControllerBase
     {
         private readonly DoctorBranchCodeRepository _repository;
+        private readonly ILogger<DoctorBranchCodeController> _logger;
 
-        public DoctorBranchCodeController(DoctorBranchCodeRepository repository)
+        public DoctorBranchCodeController(DoctorBranchCodeRepository repository, ILogger<DoctorBranchCodeController> logger)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         // GET api/doctorbranchcode/{id}
         [HttpGet("{id}", Name = "GetDoctorBranchCode")]
         public ActionResult<DoctorBranchCode> Get(int id)
         {
-            // validation: ensure id is supplied and valid
+            _logger.LogDebug("Get called: Id={Id}", id);
+
             if (id <= 0)
-                throw new ArgumentException("Id must be provided and greater than zero.", nameof(id));
+            {
+                _logger.LogWarning("Get called with invalid id: {Id}", id);
+                return BadRequest("Id must be provided and greater than zero.");
+            }
 
             try
             {
                 var item = _repository.Load(id);
-                if (item is not null)
-                    return Ok(item);
+                if (item is null)
+                {
+                    _logger.LogInformation("DoctorBranchCode not found: Id={Id}", id);
+                    return NotFound();
+                }
 
-                return NotFound($"DoctorBranchCode with id {id} not found.");
-            }
-            catch (ArgumentException)
-            {
-                throw;
+                _logger.LogInformation("DoctorBranchCode loaded: Id={Id} Name={Name}", item.Id, item.Name);
+                return Ok(item);
             }
             catch (Exception ex)
             {
-                throw new Exception($"Error loading DoctorBranchCode with id {id}", ex);
+                _logger.LogError(ex, "Error loading DoctorBranchCode with id {Id}", id);
+                return StatusCode(500, "Internal server error.");
             }
         }
 
@@ -48,25 +56,24 @@ namespace HospitadentApi.WebService.Controllers
         [HttpGet("all", Name = "GetDoctorBranchCodes")]
         public ActionResult<IEnumerable<DoctorBranchCode>> GetAll()
         {
+            _logger.LogDebug("GetAll called");
+
             try
             {
-                if (_repository == null)
-                    throw new InvalidOperationException("DoctorBranchCodeRepository is not initialized.");
-
                 var items = _repository.LoadAll() ?? new List<DoctorBranchCode>();
-
                 if (!items.Any())
+                {
+                    _logger.LogInformation("GetAll returned no doctor branch codes");
                     return NotFound("No doctor branch codes found.");
+                }
 
+                _logger.LogInformation("GetAll returning {Count} doctor branch codes", items.Count);
                 return Ok(items);
-            }
-            catch (InvalidOperationException)
-            {
-                throw;
             }
             catch (Exception ex)
             {
-                throw new Exception("Error loading doctor branch codes", ex);
+                _logger.LogError(ex, "Error loading doctor branch codes");
+                return StatusCode(500, "Internal server error.");
             }
         }
     }

@@ -1,6 +1,7 @@
 ﻿using HospitadentApi.Entity;
 using HospitadentApi.Repository;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -11,36 +12,43 @@ namespace HospitadentApi.WebService.Controllers
     public class ClinicController : ControllerBase
     {
         private readonly ClinicRepository _clinicRepository;
+        private readonly ILogger<ClinicController> _logger;
 
-        public ClinicController(ClinicRepository clinicRepository)
+        public ClinicController(ClinicRepository clinicRepository, ILogger<ClinicController> logger)
         {
-            _clinicRepository = clinicRepository;
+            _clinicRepository = clinicRepository ?? throw new ArgumentNullException(nameof(clinicRepository));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         // GET api/clinic/{id}
         [HttpGet("{id}", Name = "GetClinic")]
-        public ActionResult<IEnumerable<Clinic>> Get(int id)
+        public ActionResult<Clinic> Get(int id)
         {
-            // validation: ensure id is supplied and valid
+            _logger.LogDebug("Get called: Id={Id}", id);
+
             if (id <= 0)
-                throw new ArgumentException("Id must be provided and greater than zero.", nameof(id));
+            {
+                _logger.LogWarning("Get called with invalid id: {Id}", id);
+                return BadRequest("Id must be provided and greater than zero.");
+            }
 
             try
             {
+                _logger.LogInformation("Loading clinic {Id}", id);
                 var clinic = _clinicRepository.Load(id);
-                if (clinic is not null)
-                    return new List<Clinic> { clinic };
+                if (clinic is null)
+                {
+                    _logger.LogInformation("Clinic not found: Id={Id}", id);
+                    return NotFound($"Clinic with id {id} not found.");
+                }
 
-                return NotFound($"Clinic with id {id} not found.");
-            }
-            catch (ArgumentException) // preserve validation exceptions
-            {
-                throw;
+                _logger.LogInformation("Clinic loaded: Id={Id} Name={Name}", clinic.Id, clinic.Name);
+                return Ok(clinic);
             }
             catch (Exception ex)
             {
-                // add context and rethrow so middleware/logging can capture details
-                throw new Exception($"Error loading clinic with id {id}", ex);
+                _logger.LogError(ex, "Error loading clinic with id {Id}", id);
+                return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
 
@@ -48,27 +56,25 @@ namespace HospitadentApi.WebService.Controllers
         [HttpGet("all", Name = "GetClinics")]
         public ActionResult<IEnumerable<Clinic>> GetAll()
         {
-            // basic controller-level checks and contextual exception handling
+            _logger.LogDebug("GetAll called");
+
             try
             {
-                if (_clinicRepository == null)
-                    throw new InvalidOperationException("Clinic repository is not initialized.");
-
                 var clinics = _clinicRepository.LoadAll() ?? new List<Clinic>();
 
                 if (!clinics.Any())
+                {
+                    _logger.LogInformation("GetAll returned no clinics");
                     return NotFound("No clinics found.");
+                }
 
+                _logger.LogInformation("GetAll returning {Count} clinics", clinics.Count);
                 return Ok(clinics);
-            }
-            catch (InvalidOperationException) // preserve repository initialization errors
-            {
-                throw;
             }
             catch (Exception ex)
             {
-                // add context and rethrow to preserve stack and let middleware/logging handle it
-                throw new Exception("Error loading clinics", ex);
+                _logger.LogError(ex, "Error loading clinics");
+                return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
     }
