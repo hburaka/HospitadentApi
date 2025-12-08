@@ -1,13 +1,14 @@
 ﻿using MySql.Data.MySqlClient;
 using System;
 using System.Data;
+using System.Threading.Tasks;
 
 namespace HospitadentApi.Repository
 {
     public class DBHelper : IDisposable
     {
-        private MySqlConnection _connection;
-        private MySqlCommand _command;
+        private readonly MySqlConnection _connection;
+        private readonly MySqlCommand _command;
         private MySqlDataReader? _reader;
         private MySqlTransaction? _transaction;
         private bool _transactionCompleted;
@@ -26,13 +27,19 @@ namespace HospitadentApi.Repository
             _connection?.Dispose();
         }
 
-        private void BaglantiAc()
+        private void EnsureOpen()
         {
             if (_connection.State == ConnectionState.Closed)
                 _connection.Open();
         }
 
-        private void BaglantiKapat()
+        private async Task EnsureOpenAsync()
+        {
+            if (_connection.State == ConnectionState.Closed)
+                await _connection.OpenAsync();
+        }
+
+        private void EnsureClose()
         {
             if (_connection.State == ConnectionState.Open && _transaction == null)
                 _connection.Close();
@@ -40,7 +47,7 @@ namespace HospitadentApi.Repository
 
         public void BeginTransaction()
         {
-            BaglantiAc();
+            EnsureOpen();
             _transaction = _connection.BeginTransaction();
             _command.Transaction = _transaction;
             _transactionCompleted = false;
@@ -52,7 +59,7 @@ namespace HospitadentApi.Repository
             {
                 try { _transaction.Commit(); }
                 catch (Exception ex) { throw new Exception("Error committing transaction", ex); }
-                finally { _transactionCompleted = true; BaglantiKapat(); }
+                finally { _transactionCompleted = true; EnsureClose(); }
             }
         }
 
@@ -62,205 +69,172 @@ namespace HospitadentApi.Repository
             {
                 try { _transaction.Rollback(); }
                 catch (Exception ex) { throw new Exception("Error rolling back transaction", ex); }
-                finally { _transactionCompleted = true; BaglantiKapat(); }
+                finally { _transactionCompleted = true; EnsureClose(); }
             }
         }
 
         public void ParametreEkle(string ParametreAdi, object ParametreDegeri)
         {
-            try
-            {
-                _command.Parameters.AddWithValue(ParametreAdi, ParametreDegeri ?? DBNull.Value);
-            }
-            catch (Exception ex) { throw new Exception("Error adding parameter", ex); }
+            _command.Parameters.AddWithValue(ParametreAdi, ParametreDegeri ?? DBNull.Value);
         }
 
         public void ParametreEkle(string ParametreAdi, object ParametreDegeri, MySqlDbType ParametreTipi, int ParametreBoyut)
         {
-            try
+            var p = new MySqlParameter
             {
-                var p = new MySqlParameter
-                {
-                    ParameterName = ParametreAdi,
-                    MySqlDbType = ParametreTipi,
-                    Size = ParametreBoyut,
-                    Direction = ParameterDirection.Input,
-                    Value = ParametreDegeri ?? DBNull.Value
-                };
-                _command.Parameters.Add(p);
-            }
-            catch (Exception ex) { throw new Exception("Error adding parameter", ex); }
+                ParameterName = ParametreAdi,
+                MySqlDbType = ParametreTipi,
+                Size = ParametreBoyut,
+                Direction = ParameterDirection.Input,
+                Value = ParametreDegeri ?? DBNull.Value
+            };
+            _command.Parameters.Add(p);
         }
 
         public void ParametreEkle(string ParametreAdi, object ParametreDegeri, MySqlDbType ParametreTipi)
         {
-            try
+            var p = new MySqlParameter
             {
-                var p = new MySqlParameter
-                {
-                    ParameterName = ParametreAdi,
-                    MySqlDbType = ParametreTipi,
-                    Direction = ParameterDirection.Input,
-                    Value = ParametreDegeri ?? DBNull.Value
-                };
-                _command.Parameters.Add(p);
-            }
-            catch (Exception ex) { throw new Exception("Error adding parameter", ex); }
+                ParameterName = ParametreAdi,
+                MySqlDbType = ParametreTipi,
+                Direction = ParameterDirection.Input,
+                Value = ParametreDegeri ?? DBNull.Value
+            };
+            _command.Parameters.Add(p);
         }
 
         public void ParametreEkleOut(string ParametreAdi, MySqlDbType ParametreTipi, int ParametreBoyut)
         {
-            try
+            var p = new MySqlParameter
             {
-                var p = new MySqlParameter
-                {
-                    ParameterName = ParametreAdi,
-                    MySqlDbType = ParametreTipi,
-                    Size = ParametreBoyut,
-                    Direction = ParameterDirection.Output
-                };
-                _command.Parameters.Add(p);
-            }
-            catch (Exception ex) { throw new Exception("Error adding output parameter", ex); }
+                ParameterName = ParametreAdi,
+                MySqlDbType = ParametreTipi,
+                Size = ParametreBoyut,
+                Direction = ParameterDirection.Output
+            };
+            _command.Parameters.Add(p);
         }
 
         public string ParemetreDegeriniGetir(string ParametreAdi)
-        {
-            return _command.Parameters[ParametreAdi]?.Value?.ToString() ?? string.Empty;
-        }
+            => _command.Parameters[ParametreAdi]?.Value?.ToString() ?? string.Empty;
 
         public void ParametreleriTemizle() => _command.Parameters.Clear();
 
-        #region ExecuteReader
+        #region Sync Methods (kept for compatibility)
 
         public MySqlDataReader ExecuteReaderSp(string ProsedurAdi)
         {
-            try
-            {
-                _command.CommandType = CommandType.StoredProcedure;
-                _command.CommandText = ProsedurAdi;
-                BaglantiAc();
-                _reader = _command.ExecuteReader(CommandBehavior.CloseConnection);
-                return _reader;
-            }
-            catch (Exception ex) { throw new Exception("Error executing reader", ex); }
+            _command.CommandType = CommandType.StoredProcedure;
+            _command.CommandText = ProsedurAdi;
+            EnsureOpen();
+            _reader = _command.ExecuteReader(CommandBehavior.CloseConnection);
+            return _reader;
         }
 
         public MySqlDataReader ExecuteReaderSql(string SqlString)
         {
-            try
-            {
-                _command.CommandType = CommandType.Text;
-                _command.CommandText = SqlString;
-                BaglantiAc();
-                _reader = _command.ExecuteReader(CommandBehavior.CloseConnection);
-                return _reader;
-            }
-            catch (Exception ex) { throw new Exception("Error executing reader", ex); }
+            _command.CommandType = CommandType.Text;
+            _command.CommandText = SqlString;
+            EnsureOpen();
+            _reader = _command.ExecuteReader(CommandBehavior.CloseConnection);
+            return _reader;
         }
-
-        #endregion
-
-        #region GetDataSet
 
         public DataSet GetDataSetBySp(string ProsedurAdi)
         {
-            try
-            {
-                _command.CommandType = CommandType.StoredProcedure;
-                _command.CommandText = ProsedurAdi;
-                BaglantiAc();
-                using var adpt = new MySqlDataAdapter(_command);
-                var ds = new DataSet();
-                adpt.Fill(ds);
-                return ds;
-            }
-            catch (Exception ex) { throw new Exception("Error getting dataset", ex); }
-            finally { BaglantiKapat(); }
+            _command.CommandType = CommandType.StoredProcedure;
+            _command.CommandText = ProsedurAdi;
+            EnsureOpen();
+            using var adpt = new MySqlDataAdapter(_command);
+            var ds = new DataSet();
+            adpt.Fill(ds);
+            EnsureClose();
+            return ds;
         }
 
         public DataSet GetDataSetBySql(string SqlString)
         {
-            try
-            {
-                _command.CommandType = CommandType.Text;
-                _command.CommandText = SqlString;
-                BaglantiAc();
-                using var adpt = new MySqlDataAdapter(_command);
-                var ds = new DataSet();
-                adpt.Fill(ds);
-                return ds;
-            }
-            catch (Exception ex) { throw new Exception("Error getting dataset", ex); }
-            finally { BaglantiKapat(); }
+            _command.CommandType = CommandType.Text;
+            _command.CommandText = SqlString;
+            EnsureOpen();
+            using var adpt = new MySqlDataAdapter(_command);
+            var ds = new DataSet();
+            adpt.Fill(ds);
+            EnsureClose();
+            return ds;
         }
-
-        #endregion
-
-        #region ExecuteNonQuery
 
         public int ExecuteNonQuerySp(string ProsedurAdi)
         {
-            object etkilenenSatirSayisi = 0;
-            try
-            {
-                _command.CommandType = CommandType.StoredProcedure;
-                _command.CommandText = ProsedurAdi;
-                BaglantiAc();
-                etkilenenSatirSayisi = _command.ExecuteNonQuery();
-            }
-            catch (Exception ex) { throw new Exception("Error executing non-query", ex); }
-            finally { BaglantiKapat(); }
-            return Convert.ToInt32(etkilenenSatirSayisi);
+            _command.CommandType = CommandType.StoredProcedure;
+            _command.CommandText = ProsedurAdi;
+            EnsureOpen();
+            var res = _command.ExecuteNonQuery();
+            EnsureClose();
+            return Convert.ToInt32(res);
         }
 
         public int ExecuteNonQuerySql(string SqlString)
         {
-            object etkilenenSatirSayisi = 0;
-            try
-            {
-                _command.CommandType = CommandType.Text;
-                _command.CommandText = SqlString;
-                BaglantiAc();
-                etkilenenSatirSayisi = _command.ExecuteNonQuery();
-            }
-            catch (Exception ex) { throw new Exception("Error executing non-query", ex); }
-            finally { BaglantiKapat(); }
-            return Convert.ToInt32(etkilenenSatirSayisi);
+            _command.CommandType = CommandType.Text;
+            _command.CommandText = SqlString;
+            EnsureOpen();
+            var res = _command.ExecuteNonQuery();
+            EnsureClose();
+            return Convert.ToInt32(res);
         }
-
-        #endregion
-
-        #region ExecuteScalar
 
         public int ExecuteScalarSp(string ProsedurAdi)
         {
-            object identity = 0;
-            try
-            {
-                _command.CommandType = CommandType.StoredProcedure;
-                _command.CommandText = ProsedurAdi;
-                BaglantiAc();
-                identity = _command.ExecuteScalar();
-            }
-            catch (Exception ex) { throw new Exception("Error executing scalar", ex); }
-            finally { BaglantiKapat(); }
+            _command.CommandType = CommandType.StoredProcedure;
+            _command.CommandText = ProsedurAdi;
+            EnsureOpen();
+            var identity = _command.ExecuteScalar();
+            EnsureClose();
             return Convert.ToInt32(identity);
         }
 
         public int ExecuteScalarSql(string SqlString)
         {
-            object identity = 0;
-            try
-            {
-                _command.CommandType = CommandType.Text;
-                _command.CommandText = SqlString;
-                BaglantiAc();
-                identity = _command.ExecuteScalar();
-            }
-            catch (Exception ex) { throw new Exception("Error executing scalar", ex); }
-            finally { BaglantiKapat(); }
+            _command.CommandType = CommandType.Text;
+            _command.CommandText = SqlString;
+            EnsureOpen();
+            var identity = _command.ExecuteScalar();
+            EnsureClose();
             return Convert.ToInt32(identity);
+        }
+
+        #endregion
+
+        #region Async Methods (recommended for scalability)
+
+        public async Task<MySqlDataReader> ExecuteReaderSqlAsync(string sql)
+        {
+            _command.CommandType = CommandType.Text;
+            _command.CommandText = sql;
+            await EnsureOpenAsync();
+            _reader = await _command.ExecuteReaderAsync(CommandBehavior.CloseConnection);
+            return _reader;
+        }
+
+        public async Task<int> ExecuteNonQuerySqlAsync(string sql)
+        {
+            _command.CommandType = CommandType.Text;
+            _command.CommandText = sql;
+            await EnsureOpenAsync();
+            var res = await _command.ExecuteNonQueryAsync();
+            EnsureClose();
+            return Convert.ToInt32(res);
+        }
+
+        public async Task<object?> ExecuteScalarSqlAsync(string sql)
+        {
+            _command.CommandType = CommandType.Text;
+            _command.CommandText = sql;
+            await EnsureOpenAsync();
+            var res = await _command.ExecuteScalarAsync();
+            EnsureClose();
+            return res;
         }
 
         #endregion
