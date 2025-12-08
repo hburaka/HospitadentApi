@@ -30,30 +30,24 @@ namespace HospitadentApi.Repository
                 using var db = new DBHelper(_connectionString);
                 db.ParametreEkle("@Id", Id);
 
-                using var rd = db.ExecuteReaderSql("SELECT * FROM user_working_schedule WHERE id = @Id AND is_deleted = 0");
+                using var rd = db.ExecuteReaderSql("SELECT id, clinic_id, user_id, custom_date, day, " +
+                    "start_time, end_time " +
+                    "FROM user_working_schedule " +
+                    "WHERE id = @Id AND is_deleted = 0");
                 if (!rd.Read())
                     return null;
 
                 int ordId = rd.GetOrdinal("id");
-                int ordCompany = rd.GetOrdinal("company_id");
                 int ordClinic = rd.GetOrdinal("clinic_id");
                 int ordUser = rd.GetOrdinal("user_id");
                 int ordCustomDate = rd.GetOrdinal("custom_date");
                 int ordDay = rd.GetOrdinal("day");
                 int ordStart = rd.GetOrdinal("start_time");
                 int ordEnd = rd.GetOrdinal("end_time");
-                int ordSavedBy = rd.GetOrdinal("saved_by");
-                int ordSavedOn = rd.GetOrdinal("saved_on");
-                int ordUpdatedBy = rd.GetOrdinal("updated_by");
-                int ordUpdatedOn = rd.GetOrdinal("updated_on");
-                int ordIsDeleted = rd.GetOrdinal("is_deleted");
-                int ordDeletedBy = rd.GetOrdinal("deleted_by");
-                int ordDeletedOn = rd.GetOrdinal("deleted_on");
 
                 var ent = new UserWorkingSchedule();
 
                 if (!rd.IsDBNull(ordId)) ent.Id = rd.GetInt32(ordId);
-                if (!rd.IsDBNull(ordCompany)) ent.CompanyId = rd.GetInt64(ordCompany);
                 if (!rd.IsDBNull(ordClinic)) ent.ClinicId = rd.GetInt32(ordClinic);
                 if (!rd.IsDBNull(ordUser)) ent.UserId = rd.GetInt32(ordUser);
 
@@ -62,16 +56,6 @@ namespace HospitadentApi.Repository
                 if (!rd.IsDBNull(ordDay)) ent.Day = rd.GetString(ordDay);
                 if (!rd.IsDBNull(ordStart)) ent.StartTime = rd.GetTimeSpan(ordStart);
                 if (!rd.IsDBNull(ordEnd)) ent.EndTime = rd.GetTimeSpan(ordEnd);
-                if (!rd.IsDBNull(ordSavedBy)) ent.SavedBy = rd.GetInt32(ordSavedBy);
-
-                // SavedOn is non-nullable in entity, fallback to MinValue if bad/zero
-                ent.SavedOn = rd.SafeGetDateTimeOrDefault(ordSavedOn, DateTime.MinValue);
-
-                if (!rd.IsDBNull(ordUpdatedBy)) ent.UpdatedBy = rd.GetInt32(ordUpdatedBy);
-                ent.UpdatedOn = rd.SafeGetNullableDate(ordUpdatedOn);          // DateTime?
-                if (!rd.IsDBNull(ordIsDeleted)) ent.IsDeleted = rd.GetBoolean(ordIsDeleted);
-                if (!rd.IsDBNull(ordDeletedBy)) ent.DeletedBy = rd.GetInt32(ordDeletedBy);
-                ent.DeletedOn = rd.SafeGetNullableDate(ordDeletedOn);          // DateTime?
 
                 return ent;
             }
@@ -89,30 +73,24 @@ namespace HospitadentApi.Repository
             try
             {
                 using var db = new DBHelper(_connectionString);
-                using var rd = db.ExecuteReaderSql("SELECT * FROM user_working_schedule WHERE is_deleted = 0 ORDER BY id DESC");
+                using var rd = db.ExecuteReaderSql("SELECT id, clinic_id, user_id, custom_date, day, " +
+                    "start_time, end_time " +
+                    "FROM user_working_schedule " +
+                    "WHERE is_deleted = 0 ORDER BY id DESC");
 
                 int ordId = rd.GetOrdinal("id");
-                int ordCompany = rd.GetOrdinal("company_id");
                 int ordClinic = rd.GetOrdinal("clinic_id");
                 int ordUser = rd.GetOrdinal("user_id");
                 int ordCustomDate = rd.GetOrdinal("custom_date");
                 int ordDay = rd.GetOrdinal("day");
                 int ordStart = rd.GetOrdinal("start_time");
                 int ordEnd = rd.GetOrdinal("end_time");
-                int ordSavedBy = rd.GetOrdinal("saved_by");
-                int ordSavedOn = rd.GetOrdinal("saved_on");
-                int ordUpdatedBy = rd.GetOrdinal("updated_by");
-                int ordUpdatedOn = rd.GetOrdinal("updated_on");
-                int ordIsDeleted = rd.GetOrdinal("is_deleted");
-                int ordDeletedBy = rd.GetOrdinal("deleted_by");
-                int ordDeletedOn = rd.GetOrdinal("deleted_on");
 
                 while (rd.Read())
                 {
                     var ent = new UserWorkingSchedule();
 
                     if (!rd.IsDBNull(ordId)) ent.Id = rd.GetInt32(ordId);
-                    if (!rd.IsDBNull(ordCompany)) ent.CompanyId = rd.GetInt64(ordCompany);
                     if (!rd.IsDBNull(ordClinic)) ent.ClinicId = rd.GetInt32(ordClinic);
                     if (!rd.IsDBNull(ordUser)) ent.UserId = rd.GetInt32(ordUser);
 
@@ -120,13 +98,6 @@ namespace HospitadentApi.Repository
                     if (!rd.IsDBNull(ordDay)) ent.Day = rd.GetString(ordDay);
                     if (!rd.IsDBNull(ordStart)) ent.StartTime = rd.GetTimeSpan(ordStart);
                     if (!rd.IsDBNull(ordEnd)) ent.EndTime = rd.GetTimeSpan(ordEnd);
-                    if (!rd.IsDBNull(ordSavedBy)) ent.SavedBy = rd.GetInt32(ordSavedBy);
-                    ent.SavedOn = rd.SafeGetDateTimeOrDefault(ordSavedOn, DateTime.MinValue);
-                    if (!rd.IsDBNull(ordUpdatedBy)) ent.UpdatedBy = rd.GetInt32(ordUpdatedBy);
-                    ent.UpdatedOn = rd.SafeGetNullableDate(ordUpdatedOn);
-                    if (!rd.IsDBNull(ordIsDeleted)) ent.IsDeleted = rd.GetBoolean(ordIsDeleted);
-                    if (!rd.IsDBNull(ordDeletedBy)) ent.DeletedBy = rd.GetInt32(ordDeletedBy);
-                    ent.DeletedOn = rd.SafeGetNullableDate(ordDeletedOn);
 
                     list.Add(ent);
                 }
@@ -146,31 +117,25 @@ namespace HospitadentApi.Repository
             using var db = new DBHelper(_connectionString);
             db.ParametreEkle("@UserId", userId);
 
-            using var rd = db.ExecuteReaderSql("SELECT * FROM user_working_schedule WHERE user_id = @UserId AND is_deleted = 0 ORDER BY custom_date DESC, start_time");
+            using var rd = db.ExecuteReaderSql("SELECT id, clinic_id, user_id, custom_date, day," +
+                "start_time, end_time " +
+                "FROM user_working_schedule " +
+                "WHERE user_id = @UserId AND is_deleted = 0 ORDER BY custom_date DESC, start_time");
             if (rd == null) return result;
 
             int ordId = rd.GetOrdinal("id");
-            int ordCompany = rd.GetOrdinal("company_id");
             int ordClinic = rd.GetOrdinal("clinic_id");
             int ordUser = rd.GetOrdinal("user_id");
             int ordCustomDate = rd.GetOrdinal("custom_date");
             int ordDay = rd.GetOrdinal("day");
             int ordStart = rd.GetOrdinal("start_time");
             int ordEnd = rd.GetOrdinal("end_time");
-            int ordSavedBy = rd.GetOrdinal("saved_by");
-            int ordSavedOn = rd.GetOrdinal("saved_on");
-            int ordUpdatedBy = rd.GetOrdinal("updated_by");
-            int ordUpdatedOn = rd.GetOrdinal("updated_on");
-            int ordIsDeleted = rd.GetOrdinal("is_deleted");
-            int ordDeletedBy = rd.GetOrdinal("deleted_by");
-            int ordDeletedOn = rd.GetOrdinal("deleted_on");
 
             while (rd.Read())
             {
                 var ent = new UserWorkingSchedule();
 
                 if (!rd.IsDBNull(ordId)) ent.Id = rd.GetInt32(ordId);
-                if (!rd.IsDBNull(ordCompany)) ent.CompanyId = rd.GetInt64(ordCompany);
                 if (!rd.IsDBNull(ordClinic)) ent.ClinicId = rd.GetInt32(ordClinic);
                 if (!rd.IsDBNull(ordUser)) ent.UserId = rd.GetInt32(ordUser);
 
@@ -178,13 +143,6 @@ namespace HospitadentApi.Repository
                 if (!rd.IsDBNull(ordDay)) ent.Day = rd.GetString(ordDay);
                 if (!rd.IsDBNull(ordStart)) ent.StartTime = rd.GetTimeSpan(ordStart);
                 if (!rd.IsDBNull(ordEnd)) ent.EndTime = rd.GetTimeSpan(ordEnd);
-                if (!rd.IsDBNull(ordSavedBy)) ent.SavedBy = rd.GetInt32(ordSavedBy);
-                ent.SavedOn = rd.SafeGetDateTimeOrDefault(ordSavedOn, DateTime.MinValue);
-                if (!rd.IsDBNull(ordUpdatedBy)) ent.UpdatedBy = rd.GetInt32(ordUpdatedBy);
-                ent.UpdatedOn = rd.SafeGetNullableDate(ordUpdatedOn);
-                if (!rd.IsDBNull(ordIsDeleted)) ent.IsDeleted = rd.GetBoolean(ordIsDeleted);
-                if (!rd.IsDBNull(ordDeletedBy)) ent.DeletedBy = rd.GetInt32(ordDeletedBy);
-                ent.DeletedOn = rd.SafeGetNullableDate(ordDeletedOn);
 
                 result.Add(ent);
             }
@@ -227,9 +185,7 @@ namespace HospitadentApi.Repository
 
                 var sb = new StringBuilder();
                 sb.Append(@"
-                    SELECT
-                      id, company_id, clinic_id, user_id, custom_date, day, start_time, end_time,
-                      saved_by, saved_on, updated_by, updated_on, is_deleted, deleted_by, deleted_on
+                    SELECT id, clinic_id, user_id, custom_date, day, start_time, end_time
                     FROM user_working_schedule
                     WHERE user_id = @UserId AND is_deleted = 0
                 ");
@@ -258,23 +214,15 @@ namespace HospitadentApi.Repository
                 if (rd == null) return result;
 
                 int ordId = rd.GetOrdinal("id");
-                int ordCompany = rd.GetOrdinal("company_id");
                 int ordClinic = rd.GetOrdinal("clinic_id");
                 int ordUser = rd.GetOrdinal("user_id");
                 int ordCustomDate = rd.GetOrdinal("custom_date");
                 int ordDay = rd.GetOrdinal("day");
                 int ordStart = rd.GetOrdinal("start_time");
                 int ordEnd = rd.GetOrdinal("end_time");
-                int ordSavedBy = rd.GetOrdinal("saved_by");
-                int ordSavedOn = rd.GetOrdinal("saved_on");
-                int ordUpdatedBy = rd.GetOrdinal("updated_by");
-                int ordUpdatedOn = rd.GetOrdinal("updated_on");
-                int ordIsDeleted = rd.GetOrdinal("is_deleted");
-                int ordDeletedBy = rd.GetOrdinal("deleted_by");
-                int ordDeletedOn = rd.GetOrdinal("deleted_on");
 
                 // collect rows first, expand day-based rows into concrete dates
-                var dayRows = new List<(int Id, long CompanyId, int ClinicId, int UserId, string? Day, TimeSpan? Start, TimeSpan? End, int SavedBy, DateTime SavedOn, int UpdatedBy, DateTime? UpdatedOn, bool IsDeleted, int DeletedBy, DateTime? DeletedOn, DateTime? CustomDate)>();
+                var dayRows = new List<(int Id, int ClinicId, int UserId, string? Day, TimeSpan? Start, TimeSpan? End, DateTime? CustomDate)>();
 
                 while (rd.Read())
                 {
@@ -297,19 +245,11 @@ namespace HospitadentApi.Repository
 
                     var row = (
                         Id: rd.IsDBNull(ordId) ? 0 : rd.GetInt32(ordId),
-                        CompanyId: rd.IsDBNull(ordCompany) ? 0L : rd.GetInt64(ordCompany),
                         ClinicId: rd.IsDBNull(ordClinic) ? 0 : rd.GetInt32(ordClinic),
                         UserId: rd.IsDBNull(ordUser) ? 0 : rd.GetInt32(ordUser),
                         Day: day,
                         Start: startTime,
                         End: endTime,
-                        SavedBy: rd.IsDBNull(ordSavedBy) ? 0 : rd.GetInt32(ordSavedBy),
-                        SavedOn: rd.IsDBNull(ordSavedOn) ? DateTime.MinValue : rd.SafeGetDateTimeOrDefault(ordSavedOn, DateTime.MinValue),
-                        UpdatedBy: rd.IsDBNull(ordUpdatedBy) ? 0 : rd.GetInt32(ordUpdatedBy),
-                        UpdatedOn: rd.SafeGetNullableDate(ordUpdatedOn),
-                        IsDeleted: rd.IsDBNull(ordIsDeleted) ? false : rd.GetBoolean(ordIsDeleted),
-                        DeletedBy: rd.IsDBNull(ordDeletedBy) ? 0 : rd.GetInt32(ordDeletedBy),
-                        DeletedOn: rd.SafeGetNullableDate(ordDeletedOn),
                         CustomDate: customDate
                     );
 
@@ -324,20 +264,12 @@ namespace HospitadentApi.Repository
                         var ent = new UserWorkingSchedule
                         {
                             Id = r.Id,
-                            CompanyId = r.CompanyId,
                             ClinicId = r.ClinicId,
                             UserId = r.UserId,
                             CustomDate = r.CustomDate,
                             Day = r.Day ?? string.Empty,
                             StartTime = r.Start ?? TimeSpan.Zero,
-                            EndTime = r.End ?? TimeSpan.Zero,
-                            SavedBy = r.SavedBy,
-                            SavedOn = r.SavedOn,
-                            UpdatedBy = r.UpdatedBy,
-                            UpdatedOn = r.UpdatedOn,
-                            IsDeleted = r.IsDeleted,
-                            DeletedBy = r.DeletedBy,
-                            DeletedOn = r.DeletedOn
+                            EndTime = r.End ?? TimeSpan.Zero
                         };
                         result.Add(ent);
                     }
@@ -351,20 +283,12 @@ namespace HospitadentApi.Repository
                                 var ent = new UserWorkingSchedule
                                 {
                                     Id = r.Id,
-                                    CompanyId = r.CompanyId,
                                     ClinicId = r.ClinicId,
                                     UserId = r.UserId,
                                     CustomDate = d,
                                     Day = r.Day,
                                     StartTime = r.Start ?? TimeSpan.Zero,
-                                    EndTime = r.End ?? TimeSpan.Zero,
-                                    SavedBy = r.SavedBy,
-                                    SavedOn = r.SavedOn,
-                                    UpdatedBy = r.UpdatedBy,
-                                    UpdatedOn = r.UpdatedOn,
-                                    IsDeleted = r.IsDeleted,
-                                    DeletedBy = r.DeletedBy,
-                                    DeletedOn = r.DeletedOn
+                                    EndTime = r.End ?? TimeSpan.Zero
                                 };
                                 result.Add(ent);
                             }
