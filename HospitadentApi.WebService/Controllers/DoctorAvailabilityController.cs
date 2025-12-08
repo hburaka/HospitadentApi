@@ -83,8 +83,7 @@ namespace HospitadentApi.WebService.Controllers
                 {
                     schedules = _workingScheduleRepository.GetByCriteria(
                         userId: doctorId,
-
-                sb, row, from: start,
+                        from: start,
                         to: end,
                         clinicId: clinicId);
                     _logger.LogInformation("Loaded {Count} working schedule rows", schedules?.Count ?? 0);

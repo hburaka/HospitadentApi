@@ -122,8 +122,11 @@ namespace HospitadentApi.WebService.Controllers
 
             try
             {
-                var list = _repo.GetByCriteria(criteria.UserId,
-                sb, row, criteria.FromDate, criteria.ToDate, criteria.ClinicId);
+                var list = _repo.GetByCriteria(
+                    userId: criteria.UserId,
+                    from: criteria.FromDate,
+                    to: criteria.ToDate,
+                    clinicId: criteria.ClinicId);
                 if (list == null || list.Count == 0)
                 {
                     _logger.LogInformation("GetByCriteria returned no schedules for criteria {@Criteria}", criteria);
