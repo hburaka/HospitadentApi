@@ -61,50 +61,6 @@ namespace HospitadentApi.Repository
             }
         }
 
-        public IList<UserWorkingSchedule> LoadAll()
-        {
-            _logger.LogDebug("LoadAll called");
-            var list = new List<UserWorkingSchedule>();
-            try
-            {
-                using var db = new DBHelper(_connectionString);
-                using var rd = db.ExecuteReaderSql("SELECT id, clinic_id, user_id, custom_date, day, " +
-                    "start_time, end_time " +
-                    "FROM user_working_schedule " +
-                    "WHERE is_deleted = 0 ORDER BY id DESC");
-
-                int ordId = rd.GetOrdinal("id");
-                int ordClinic = rd.GetOrdinal("clinic_id");
-                int ordUser = rd.GetOrdinal("user_id");
-                int ordCustomDate = rd.GetOrdinal("custom_date");
-                int ordDay = rd.GetOrdinal("day");
-                int ordStart = rd.GetOrdinal("start_time");
-                int ordEnd = rd.GetOrdinal("end_time");
-
-                while (rd.Read())
-                {
-                    var ent = new UserWorkingSchedule();
-
-                    if (!rd.IsDBNull(ordId)) ent.Id = rd.GetInt32(ordId);
-                    if (!rd.IsDBNull(ordClinic)) ent.ClinicId = rd.GetInt32(ordClinic);
-                    if (!rd.IsDBNull(ordUser)) ent.UserId = rd.GetInt32(ordUser);
-
-                    ent.CustomDate = rd.SafeGetNullableDate(ordCustomDate);
-                    if (!rd.IsDBNull(ordDay)) ent.Day = rd.GetString(ordDay);
-                    if (!rd.IsDBNull(ordStart)) ent.StartTime = rd.GetTimeSpan(ordStart);
-                    if (!rd.IsDBNull(ordEnd)) ent.EndTime = rd.GetTimeSpan(ordEnd);
-
-                    list.Add(ent);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error loading UserWorkingSchedule list");
-                throw new Exception("Error loading UserWorkingSchedule list", ex);
-            }
-            return list;
-        }
-
         public IList<UserWorkingSchedule> GetByUser(int userId)
         {
             _logger.LogDebug("GetByUser called: UserId={UserId}", userId);
@@ -308,10 +264,61 @@ namespace HospitadentApi.Repository
             }
         }
 
+
         // Not implemented write operations - implement as needed
         public int Insert(UserWorkingSchedule instance) => throw new NotImplementedException();
         public int Update(UserWorkingSchedule instance) => throw new NotImplementedException();
         public int Delete(UserWorkingSchedule instance) => throw new NotImplementedException();
+        public IList<UserWorkingSchedule> LoadAll()
+        {
+            throw new NotImplementedException();
+        }
+
+        // Gerekirse kullanýrýz, þimdilik LoadAll() metodunu pasif býraktýk.
+
+        //public IList<UserWorkingSchedule> LoadAll()
+        //{
+        //    _logger.LogDebug("LoadAll called");
+        //    var list = new List<UserWorkingSchedule>();
+        //    try
+        //    {
+        //        using var db = new DBHelper(_connectionString);
+        //        using var rd = db.ExecuteReaderSql("SELECT id, clinic_id, user_id, custom_date, day, " +
+        //            "start_time, end_time " +
+        //            "FROM user_working_schedule " +
+        //            "WHERE is_deleted = 0 ORDER BY id DESC");
+
+        //        int ordId = rd.GetOrdinal("id");
+        //        int ordClinic = rd.GetOrdinal("clinic_id");
+        //        int ordUser = rd.GetOrdinal("user_id");
+        //        int ordCustomDate = rd.GetOrdinal("custom_date");
+        //        int ordDay = rd.GetOrdinal("day");
+        //        int ordStart = rd.GetOrdinal("start_time");
+        //        int ordEnd = rd.GetOrdinal("end_time");
+
+        //        while (rd.Read())
+        //        {
+        //            var ent = new UserWorkingSchedule();
+
+        //            if (!rd.IsDBNull(ordId)) ent.Id = rd.GetInt32(ordId);
+        //            if (!rd.IsDBNull(ordClinic)) ent.ClinicId = rd.GetInt32(ordClinic);
+        //            if (!rd.IsDBNull(ordUser)) ent.UserId = rd.GetInt32(ordUser);
+
+        //            ent.CustomDate = rd.SafeGetNullableDate(ordCustomDate);
+        //            if (!rd.IsDBNull(ordDay)) ent.Day = rd.GetString(ordDay);
+        //            if (!rd.IsDBNull(ordStart)) ent.StartTime = rd.GetTimeSpan(ordStart);
+        //            if (!rd.IsDBNull(ordEnd)) ent.EndTime = rd.GetTimeSpan(ordEnd);
+
+        //            list.Add(ent);
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error loading UserWorkingSchedule list");
+        //        throw new Exception("Error loading UserWorkingSchedule list", ex);
+        //    }
+        //    return list;
+        //}
     }
 }
 
