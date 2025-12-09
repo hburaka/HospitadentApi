@@ -2,6 +2,7 @@ using HospitadentApi.Repository;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.DataProtection;
 using System.Text;
 using DotNetEnv;
 
@@ -129,6 +130,13 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+// DataProtection: Production'da memory storage kullan (container içinde kalıcı storage'a gerek yok)
+if (builder.Environment.IsProduction())
+{
+    builder.Services.AddDataProtection()
+        .PersistKeysToMemory(); // Keys'i memory'de sakla (container restart'ta kaybolur ama sorun değil)
+}
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -200,9 +208,9 @@ if (app.Environment.IsDevelopment())
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Hospitadent API v1");
         c.InjectJavascript("/swagger-login.js");
     });
+    // HTTPS redirection sadece Development'ta (Production'da reverse proxy HTTPS sağlıyor)
+    app.UseHttpsRedirection();
 }
-
-app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
