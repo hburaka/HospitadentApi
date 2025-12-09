@@ -31,6 +31,9 @@ EXPOSE 8080
 # Set environment to Production
 ENV ASPNETCORE_ENVIRONMENT=Production
 ENV ASPNETCORE_URLS=http://+:8080
+# Disable file watching in Docker container (prevents inotify limit errors)
+ENV DOTNET_USE_POLLING_FILE_WATCHER=true
+ENV ASPNETCORE_DETAILEDERRORS=false
 
 # Entry point
 ENTRYPOINT ["dotnet", "HospitadentApi.WebService.dll"]
