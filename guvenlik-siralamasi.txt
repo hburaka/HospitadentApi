@@ -1,0 +1,32 @@
+Swagger UI production'da açık kalabilir
+Sadece Development kontrolü var
+Production'da kesinlikle kapatılmalı
+appsettings.json git'te olmamalı
+Hassas bilgiler içeriyor
+appsettings.Production.json oluşturulmalı
+ORTA öncelikli sorunlar
+CORS politikası yok
+Tüm origin'lere açık olabilir
+Sadece izin verilen domain'lerden erişime izin verilmeli
+Security headers eksik
+X-Content-Type-Options
+X-Frame-Options
+X-XSS-Protection
+Strict-Transport-Security
+Rate limiting yok
+Brute force saldırılarına karşı koruma yok
+Login endpoint'i özellikle riskli
+Error handling'de bilgi sızıntısı
+Exception mesajları direkt döndürülüyor
+Production'da generic mesajlar kullanılmalı
+Input validation eksik
+Data Annotations kullanılmıyor
+LoginRequest ve diğer DTO'larda validation yok
+DÜŞÜK öncelikli sorunlar
+SQL injection riski kontrolü
+Çoğu sorgu parametreli (iyi)
+Bazı yerlerde string interpolation var (kontrol edilmeli)
+HTTPS/HSTS ayarları
+HTTPS redirection var
+HSTS header'ı eklenebilir
+Hangi sorundan başlayalım? Öneri: önce kritik sorunları çözelim (1-3), sonra orta önceliklilere geçelim.
