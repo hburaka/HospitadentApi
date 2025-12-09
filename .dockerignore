@@ -1,0 +1,46 @@
+# Build outputs
+bin/
+obj/
+out/
+publish/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Documentation
+*.md
+!README.md
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Test
+[Dd]ebug/
+[Rr]elease/
+[Tt]est[Rr]esult*/
+
+# Other
+*.sln.docstates
+.DS_Store
+Thumbs.db
+
