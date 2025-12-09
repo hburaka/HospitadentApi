@@ -1,9 +1,12 @@
 [phases.setup]
 nixPkgs = ["dotnet-sdk_8"]
 
+[phases.install]
+cmds = ["dotnet restore"]
+
 [phases.build]
-cmds = ["dotnet restore", "dotnet publish HospitadentApi.WebService/HospitadentApi.WebService.csproj -c Release -o /app/out"]
+cmds = ["dotnet publish HospitadentApi.WebService/HospitadentApi.WebService.csproj -c Release -o out"]
 
 [phases.start]
-cmd = "dotnet /app/out/HospitadentApi.WebService.dll"
+cmd = "dotnet out/HospitadentApi.WebService.dll"
 

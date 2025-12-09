@@ -168,6 +168,30 @@ builder.Services.AddSwaggerGen(c =>
 var app = builder.Build();
 
 app.UseStaticFiles();
+
+// Security Headers ve Robots Tag Middleware
+app.Use(async (context, next) =>
+{
+    // X-Robots-Tag: Arama motorlarının indekslemesini engelle
+    context.Response.Headers.Append("X-Robots-Tag", "noindex, nofollow");
+    
+    // Security Headers
+    context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+    context.Response.Headers.Append("X-Frame-Options", "DENY");
+    context.Response.Headers.Append("X-XSS-Protection", "1; mode=block");
+    
+    // HSTS (HTTPS zorunluluğu) - Sadece HTTPS üzerinden çalışıyorsa
+    if (context.Request.IsHttps)
+    {
+        context.Response.Headers.Append("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+    }
+    
+    // Referrer-Policy
+    context.Response.Headers.Append("Referrer-Policy", "no-referrer");
+    
+    await next();
+});
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
