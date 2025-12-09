@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using HospitadentApi.Entity;
 using HospitadentApi.Repository;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
@@ -9,6 +10,7 @@ namespace HospitadentApi.WebService.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class AppointmentController : ControllerBase
     {
         private readonly AppointmentRepository _appointmentRepository;
@@ -20,11 +22,6 @@ namespace HospitadentApi.WebService.Controllers
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        /// <summary>
-        /// Query appointments by flexible criteria.
-        /// Example:
-        /// GET api/appointment/search?doctorId=472&from=2025-12-01&to=2025-12-14&clinicId=3&appointmentStatus=1
-        /// </summary>
         [HttpGet("search", Name = "GetByCriteria")]
         public ActionResult<IEnumerable<Appointment>> GetByCriteria(
             [FromQuery] int? doctorId = null,
@@ -44,7 +41,6 @@ namespace HospitadentApi.WebService.Controllers
                 _logger.LogInformation("GetByCriteria called: doctorId={DoctorId}, from={From}, to={To}, clinicId={ClinicId}, appointmentStatus={AppointmentStatus}, appointmentType={AppointmentType}, treatmentType={TreatmentType}, isConfirmed={IsConfirmed}",
                     doctorId, start, end, clinicId, appointmentStatus, appointmentType, treatmentType, isConfirmed);
 
-                // Kullanıcı hem başlangıç hem bitiş tarihi gönderdiyse, bitişin başlangıçtan önce olmaması gerekir.
                 if (from.HasValue && to.HasValue && to.Value < from.Value)
                 {
                     _logger.LogWarning("GetByCriteria called with end < start: from={From} to={To}", from, to);
@@ -53,7 +49,6 @@ namespace HospitadentApi.WebService.Controllers
 
                 if (end < start) end = start;
 
-                // Güvenlik ve performans için, istenen tarih aralığını örnek olarak en fazla 1 yıl ile sınırlandırıyoruz.
                 var maxDays = 365;
                 if ((end - start).TotalDays > maxDays)
                 {
@@ -93,11 +88,6 @@ namespace HospitadentApi.WebService.Controllers
             }
         }
 
-        /// <summary>
-        /// Belirli bir doktor için, verilen tarih aralığında randevuları getirir.
-        /// Örnek: GET api/appointment/doctor/472?from=2025-12-01&to=2025-12-14
-        /// from/to gönderilmezse, bugün + 14 gün varsayılır.
-        /// </summary>
         [HttpGet("doctor/{doctorId}", Name = "GetDoctorAppointments")]
         public ActionResult<IEnumerable<Appointment>> GetDoctorAppointments(
             int doctorId,

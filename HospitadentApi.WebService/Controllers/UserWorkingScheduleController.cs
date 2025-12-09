@@ -1,6 +1,6 @@
-// HospitadentApi.WebService\Controllers\UserWorkingScheduleController.cs
 using HospitadentApi.Entity;
 using HospitadentApi.Repository;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System;
@@ -10,6 +10,7 @@ namespace HospitadentApi.WebService.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class UserWorkingScheduleController : ControllerBase
     {
         private readonly UserWorkingScheduleRepository _repo;
@@ -21,7 +22,6 @@ namespace HospitadentApi.WebService.Controllers
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        // GET api/userworkingschedule/{id}
         [HttpGet("{id}", Name = "GetWorkingSchedule")]
         public ActionResult<UserWorkingSchedule> Get(int id)
         {
@@ -52,7 +52,6 @@ namespace HospitadentApi.WebService.Controllers
             }
         }
 
-        // GET api/userworkingschedule/all
         [HttpGet("all", Name = "GetAllWorkingSchedules")]
         public ActionResult<IEnumerable<UserWorkingSchedule>> GetAll()
         {
@@ -77,7 +76,6 @@ namespace HospitadentApi.WebService.Controllers
             }
         }
 
-        // GET api/userworkingschedule/user/{userId}
         [HttpGet("user/{userId}", Name = "GetSchedulesByUser")]
         public ActionResult<IEnumerable<UserWorkingSchedule>> GetByUser(int userId)
         {
@@ -108,7 +106,6 @@ namespace HospitadentApi.WebService.Controllers
             }
         }
 
-        // POST api/userworkingschedule/criteria
         [HttpPost("criteria", Name = "GetSchedulesByCriteria")]
         public ActionResult<IEnumerable<UserWorkingSchedule>> GetByCriteria([FromBody] ScheduleCriteria criteria)
         {
@@ -143,7 +140,6 @@ namespace HospitadentApi.WebService.Controllers
             }
         }
 
-        // Note: PUT/DELETE can be added when repository update/remove methods are implemented.
     }
 
     public class ScheduleCriteria

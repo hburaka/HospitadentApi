@@ -1,5 +1,6 @@
 ﻿using HospitadentApi.Entity;
 using HospitadentApi.Repository;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
@@ -9,6 +10,7 @@ namespace HospitadentApi.WebService.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class ClinicController : ControllerBase
     {
         private readonly ClinicRepository _clinicRepository;
@@ -20,7 +22,6 @@ namespace HospitadentApi.WebService.Controllers
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        // GET api/clinic/{id}
         [HttpGet("{id}", Name = "GetClinic")]
         public ActionResult<Clinic> Get(int id)
         {
@@ -52,7 +53,6 @@ namespace HospitadentApi.WebService.Controllers
             }
         }
 
-        // GET api/clinic/all
         [HttpGet("all", Name = "GetClinics")]
         public ActionResult<IEnumerable<Clinic>> GetAll()
         {

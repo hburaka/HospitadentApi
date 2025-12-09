@@ -1,6 +1,6 @@
-// HospitadentApi.WebService\Controllers\UserController.cs
 using HospitadentApi.Entity;
 using HospitadentApi.Repository;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System;
@@ -11,6 +11,7 @@ namespace HospitadentApi.WebService.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class UserController : ControllerBase
     {
         private readonly UserRepository _userRepository;
@@ -25,7 +26,6 @@ namespace HospitadentApi.WebService.Controllers
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        // GET api/user/{id}  -- single resource, return User (not IEnumerable<User>)
         [HttpGet("{id}", Name = "GetUser")]
         public ActionResult<User> Get(int id)
         {
@@ -56,38 +56,6 @@ namespace HospitadentApi.WebService.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
-
-        //// GET api/user/all?page=1&pageSize=100  -- safe paged GetAll
-        //[HttpGet("all", Name = "GetUsers")]
-        //public ActionResult<IEnumerable<User>> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = DefaultPageSize)
-        //{
-        //    _logger.LogDebug("GetAll called: page={Page} pageSize={PageSize}", page, pageSize);
-
-        //    if (page <= 0) page = 1;
-        //    if (pageSize <= 0) pageSize = DefaultPageSize;
-        //    pageSize = Math.Min(pageSize, MaxPageSize);
-
-        //    try
-        //    {
-        //        var users = _userRepository.LoadAll() ?? new List<User>();
-        //        if (!users.Any())
-        //        {
-        //            _logger.LogInformation("GetAll returned no users");
-        //            return NotFound("No users found.");
-        //        }
-
-        //        var paged = users.Skip((page - 1) * pageSize).Take(pageSize).ToList();
-        //        _logger.LogInformation("GetAll returning {Count} users (page={Page})", paged.Count, page);
-        //        return Ok(paged);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "Error loading users");
-        //        return StatusCode(500, $"Internal server error: {ex.Message}");
-        //    }
-        //}
-
-        // GET api/user/search?id=...&name=...  -- safe GET for simple filters, apply caps
 
         [HttpGet("search", Name = "SearchUsers")]
         public ActionResult<IEnumerable<User>> Search(

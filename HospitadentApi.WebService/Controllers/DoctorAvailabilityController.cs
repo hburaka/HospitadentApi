@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using HospitadentApi.Entity;
 using HospitadentApi.Repository;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
@@ -10,16 +11,16 @@ namespace HospitadentApi.WebService.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class DoctorAvailabilityController : ControllerBase
     {
         private readonly AppointmentRepository _appointmentRepository;
         private readonly UserWorkingScheduleRepository _workingScheduleRepository;
         private readonly ILogger<DoctorAvailabilityController> _logger;
 
-        // Limits / defaults to protect the API from expensive requests
         private const int DefaultSlotMinutes = 30;
         private const int MinSlotMinutes = 5;
-        private const int MaxSlotMinutes = 480; // 8 hours
+        private const int MaxSlotMinutes = 480;
         private const int MaxDaysRange = 60;
         private const int MaxReturnedSlots = 5000;
 
@@ -105,7 +106,6 @@ namespace HospitadentApi.WebService.Controllers
                     return NotFound("Bu doktor için belirtilen tarih aralığında tanımlı çalışma saati bulunamadı.");
                 }
 
-                // Partition schedules into explicit-date ones and recurring-by-day ones
                 var explicitByDate = new Dictionary<DateTime, List<UserWorkingSchedule>>();
                 var recurringByDay = new Dictionary<DayOfWeek, List<UserWorkingSchedule>>();
 
@@ -131,7 +131,6 @@ namespace HospitadentApi.WebService.Controllers
                     }
                 }
 
-                // Load appointments in range once
                 IList<Appointment> appointments;
                 try
                 {
@@ -157,7 +156,6 @@ namespace HospitadentApi.WebService.Controllers
                     throw;
                 }
 
-                // Group appointments by date for fast lookup
                 var appointmentsByDate = (appointments ?? new List<Appointment>())
                     .GroupBy(a => a.StartDate.Date)
                     .ToDictionary(g => g.Key, g => g.OrderBy(a => a.StartDate).ToList());
@@ -165,7 +163,6 @@ namespace HospitadentApi.WebService.Controllers
                 var slotLength = TimeSpan.FromMinutes(slotMinutes);
                 var result = new List<DoctorAvailableSlotDto>(256);
 
-                // Iterate each date in range once, combine explicit and recurring for that date
                 for (var cur = start.Date; cur <= end.Date; cur = cur.AddDays(1))
                 {
                     if (!explicitByDate.TryGetValue(cur, out var listForDate))
@@ -177,14 +174,11 @@ namespace HospitadentApi.WebService.Controllers
                     if (listForDate.Count == 0)
                         continue;
 
-                    // For this date, get appointments (sorted)
                     appointmentsByDate.TryGetValue(cur, out var dayAppointments);
                     dayAppointments ??= new List<Appointment>();
 
-                    // Build slots for each working schedule on this date
                     foreach (var schedule in listForDate)
                     {
-                        // Validate schedule times
                         var startTime = schedule.StartTime;
                         var endTime = schedule.EndTime;
 
@@ -201,7 +195,6 @@ namespace HospitadentApi.WebService.Controllers
                         {
                             var slotEnd = slotStart.Add(slotLength);
 
-                            // simple conflict check; dayAppointments is ordered which helps if large
                             var hasConflict = dayAppointments.Any(a => a.StartDate < slotEnd && a.EndDate > slotStart);
                             if (hasConflict)
                                 continue;
@@ -219,7 +212,6 @@ namespace HospitadentApi.WebService.Controllers
                             {
                                 _logger.LogWarning("Result truncated at {MaxReturnedSlots} slots for doctor {DoctorId}", MaxReturnedSlots, doctorId);
                                 Response.Headers["X-Result-Truncated"] = "true";
-                                // Return early with truncated result to protect the server
                                 return Ok(result.OrderBy(x => x.Date).ThenBy(x => x.Start).ToList());
                             }
                         }

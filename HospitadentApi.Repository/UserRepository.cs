@@ -498,6 +498,145 @@ namespace HospitadentApi.Repository
             return result;
         }
 
+        public User? AuthenticateUser(string username, string password)
+        {
+            _logger.LogDebug("AuthenticateUser called: username={Username}", username);
+            
+            try
+            {
+                using var db = new DBHelper(_connectionString);
+                db.ParametreEkle("@Username", username);
+                
+                using var rd = db.ExecuteReaderSql(@"
+                    SELECT
+                        u.id,
+                        u.u_password_new,
+                        CASE
+                            WHEN u.middle_name IS NULL OR u.middle_name = '' OR u.middle_name = '0' THEN u.first_name
+                            WHEN CONCAT(' ', u.first_name, ' ') LIKE CONCAT('% ', u.middle_name, ' %') THEN u.first_name
+                            ELSE CONCAT(u.first_name, ' ', u.middle_name)
+                        END AS `Name`,
+                        u.last_name AS `LastName`,
+                        u.user_type,
+                        u.clinic_id,
+                        c.clinic_name AS clinic_name,
+                        c.status AS clinic_status,
+                        c.isDeleted AS clinic_isDeleted,
+                        u.allowed_clinics,
+                        u.department,
+                        d.department_name AS department_name,
+                        d.isDeleted AS department_isDeleted,
+                        u.role,
+                        r.roleName AS role_name,
+                        r.department_id AS role_department_id,
+                        u.show_in_calendar,
+                        u.is_active
+                    FROM users u
+                    LEFT JOIN clinics c ON u.clinic_id = c.id AND c.isDeleted = 0
+                    LEFT JOIN user_departments d ON u.department = d.id AND d.isDeleted = 0
+                    LEFT JOIN user_roles r ON u.role = r.id AND r.isDeleted = 0
+                    WHERE u.isDeleted = 0 
+                        AND u.is_active = 1
+                        AND u.u_username = @Username
+                    LIMIT 1");
+
+                if (!rd.Read())
+                {
+                    _logger.LogWarning("Authentication failed for: {Username}", username);
+                    return null;
+                }
+
+                var ordPassword = rd.GetOrdinal("u_password_new");
+                var dbPassword = rd.IsDBNull(ordPassword) ? null : rd.GetString(ordPassword);
+                
+                if (dbPassword != password)
+                {
+                    _logger.LogWarning("Password mismatch for user: {Username}", username);
+                    return null;
+                }
+
+                var user = MapUserFromReader(rd);
+                
+                _logger.LogInformation("User authenticated successfully: Id={Id} Name={Name}", user.Id, user.Name);
+                return user;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error authenticating user: {Username}", username);
+                throw new Exception("Error authenticating user", ex);
+            }
+        }
+
+        private User MapUserFromReader(MySqlDataReader rd)
+        {
+            var user = new User();
+            
+            var ordId = rd.GetOrdinal("id");
+            var ordName = rd.GetOrdinal("Name");
+            var ordLastName = rd.GetOrdinal("LastName");
+            var ordUserType = rd.GetOrdinal("user_type");
+            var ordClinicId = rd.GetOrdinal("clinic_id");
+            var ordClinicName = rd.GetOrdinal("clinic_name");
+            var ordClinicStatus = rd.GetOrdinal("clinic_status");
+            var ordClinicIsDeleted = rd.GetOrdinal("clinic_isDeleted");
+            var ordAllowedClinics = rd.GetOrdinal("allowed_clinics");
+            var ordDepartment = rd.GetOrdinal("department");
+            var ordDepartmentName = rd.GetOrdinal("department_name");
+            var ordDepartmentIsDeleted = rd.GetOrdinal("department_isDeleted");
+            var ordRole = rd.GetOrdinal("role");
+            var ordRoleName = rd.GetOrdinal("role_name");
+            var ordRoleDeptId = rd.GetOrdinal("role_department_id");
+            var ordShowInCalendar = rd.GetOrdinal("show_in_calendar");
+            var ordIsActive = rd.GetOrdinal("is_active");
+
+            if (!rd.IsDBNull(ordId)) user.Id = rd.GetInt32(ordId);
+            if (!rd.IsDBNull(ordName)) user.Name = rd.GetString(ordName);
+            if (!rd.IsDBNull(ordLastName)) user.LastName = rd.GetString(ordLastName);
+            if (!rd.IsDBNull(ordUserType)) user.UserType = rd.GetInt32(ordUserType);
+            if (!rd.IsDBNull(ordShowInCalendar)) user.ShowInCalender = rd.GetInt32(ordShowInCalendar);
+            if (!rd.IsDBNull(ordIsActive)) user.IsActive = rd.GetBoolean(ordIsActive);
+
+            if (!rd.IsDBNull(ordClinicId))
+            {
+                user.Clinic = new Clinic
+                {
+                    Id = rd.GetInt32(ordClinicId),
+                    Name = !rd.IsDBNull(ordClinicName) ? rd.GetString(ordClinicName) : null,
+                    Status = !rd.IsDBNull(ordClinicStatus) ? rd.GetBoolean(ordClinicStatus) : false,
+                    IsDeleted = !rd.IsDBNull(ordClinicIsDeleted) ? rd.GetBoolean(ordClinicIsDeleted) : false
+                };
+            }
+
+            if (!rd.IsDBNull(ordAllowedClinics))
+            {
+                var csv = rd.GetString(ordAllowedClinics);
+                user.AllowedClinic = csv;
+                user.AllowedClinics = _clinicRepo.GetByIds(ParseIdList(csv)).ToList();
+            }
+
+            if (!rd.IsDBNull(ordDepartment))
+            {
+                user.Department = new Department
+                {
+                    Id = rd.GetInt32(ordDepartment),
+                    Name = !rd.IsDBNull(ordDepartmentName) ? rd.GetString(ordDepartmentName) : null,
+                    IsDeleted = !rd.IsDBNull(ordDepartmentIsDeleted) ? rd.GetBoolean(ordDepartmentIsDeleted) : false
+                };
+            }
+
+            if (!rd.IsDBNull(ordRole))
+            {
+                user.URole = new URole
+                {
+                    Id = rd.GetInt32(ordRole),
+                    Name = !rd.IsDBNull(ordRoleName) ? rd.GetString(ordRoleName) : null,
+                    Department = !rd.IsDBNull(ordRoleDeptId) ? new Department { Id = rd.GetInt32(ordRoleDeptId) } : null
+                };
+            }
+
+            return user;
+        }
+
         public int Delete(User instance) => throw new NotImplementedException();
         public int Insert(User instance) => throw new NotImplementedException();
         public int Update(User instance) => throw new NotImplementedException();

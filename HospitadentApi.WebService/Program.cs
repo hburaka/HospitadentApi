@@ -1,9 +1,14 @@
 using HospitadentApi.Repository;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using DotNetEnv;
+
+Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
-// configure logging (console + default settings)
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 builder.Logging.AddDebug();
@@ -11,71 +16,76 @@ builder.Logging.AddDebug();
 builder.Services.AddScoped(sp =>
 {
     var cfg = sp.GetRequiredService<IConfiguration>();
-    var conn = cfg.GetConnectionString("DefaultConnection") ?? cfg["ConnectionStrings:DefaultConnection"];
+    var conn = Environment.GetEnvironmentVariable("CONNECTION_STRING") 
+               ?? cfg.GetConnectionString("DefaultConnection") 
+               ?? cfg["ConnectionStrings:DefaultConnection"];
     var logger = sp.GetRequiredService<ILogger<ClinicRepository>>();
-    return new ClinicRepository(conn ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found."), logger);
+    return new ClinicRepository(conn ?? throw new InvalidOperationException("Connection string bulunamadı!"), logger);
 });
-//builder.Services.AddScoped(sp =>
-//{
-//    var cfg = sp.GetRequiredService<IConfiguration>();
-//    var conn = cfg.GetConnectionString("DefaultConnection") ?? cfg["ConnectionStrings:DefaultConnection"];
-//    return new DoctorBranchCodeRepository(conn ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found."));
-//});
-//builder.Services.AddScoped(sp =>
-//{
-//    var cfg = sp.GetRequiredService<IConfiguration>();
-//    var conn = cfg.GetConnectionString("DefaultConnection") ?? cfg["ConnectionStrings:DefaultConnection"];
-//    return new ClinicRepository(conn ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found."));
-//});
+
 builder.Services.AddScoped(sp =>
 {
     var cfg = sp.GetRequiredService<IConfiguration>();
-    var conn = cfg.GetConnectionString("DefaultConnection") ?? cfg["ConnectionStrings:DefaultConnection"];
+    var conn = Environment.GetEnvironmentVariable("CONNECTION_STRING") 
+               ?? cfg.GetConnectionString("DefaultConnection") 
+               ?? cfg["ConnectionStrings:DefaultConnection"];
     var logger = sp.GetRequiredService<ILogger<DoctorBranchCodeRepository>>();
-    return new DoctorBranchCodeRepository(conn ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found."), logger);
+    return new DoctorBranchCodeRepository(conn ?? throw new InvalidOperationException("Connection string bulunamadı!"), logger);
 });
 builder.Services.AddScoped(sp =>
 {
     var cfg = sp.GetRequiredService<IConfiguration>();
-    var conn = cfg.GetConnectionString("DefaultConnection") ?? cfg["ConnectionStrings:DefaultConnection"];
+    var conn = Environment.GetEnvironmentVariable("CONNECTION_STRING") 
+               ?? cfg.GetConnectionString("DefaultConnection") 
+               ?? cfg["ConnectionStrings:DefaultConnection"];
     var clinicRepo = sp.GetRequiredService<ClinicRepository>();
     var logger = sp.GetRequiredService<ILogger<UserRepository>>();
-    return new UserRepository(conn ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found."), clinicRepo, logger);
+    return new UserRepository(conn ?? throw new InvalidOperationException("Connection string bulunamadı!"), clinicRepo, logger);
 });
 builder.Services.AddScoped(sp =>
 {
     var cfg = sp.GetRequiredService<IConfiguration>();
-    var conn = cfg.GetConnectionString("DefaultConnection") ?? cfg["ConnectionStrings:DefaultConnection"];
+    var conn = Environment.GetEnvironmentVariable("CONNECTION_STRING") 
+               ?? cfg.GetConnectionString("DefaultConnection") 
+               ?? cfg["ConnectionStrings:DefaultConnection"];
     var logger = sp.GetRequiredService<ILogger<UserWorkingScheduleRepository>>();
-    return new UserWorkingScheduleRepository(conn ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found."), logger);
+    return new UserWorkingScheduleRepository(conn ?? throw new InvalidOperationException("Connection string bulunamadı!"), logger);
 });
 builder.Services.AddScoped(sp =>
 {
     var cfg = sp.GetRequiredService<IConfiguration>();
-    var conn = cfg.GetConnectionString("DefaultConnection") ?? cfg["ConnectionStrings:DefaultConnection"];
+    var conn = Environment.GetEnvironmentVariable("CONNECTION_STRING") 
+               ?? cfg.GetConnectionString("DefaultConnection") 
+               ?? cfg["ConnectionStrings:DefaultConnection"];
     var logger = sp.GetRequiredService<ILogger<AppointmentRepository>>();
-    return new AppointmentRepository(conn ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found."), logger);
+    return new AppointmentRepository(conn ?? throw new InvalidOperationException("Connection string bulunamadı!"), logger);
 });
 builder.Services.AddScoped(sp =>
 {
     var cfg = sp.GetRequiredService<IConfiguration>();
-    var conn = cfg.GetConnectionString("DefaultConnection") ?? cfg["ConnectionStrings:DefaultConnection"];
+    var conn = Environment.GetEnvironmentVariable("CONNECTION_STRING") 
+               ?? cfg.GetConnectionString("DefaultConnection") 
+               ?? cfg["ConnectionStrings:DefaultConnection"];
     var logger = sp.GetRequiredService<ILogger<PatientRepository>>();
-    return new PatientRepository(conn ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found."), logger);
+    return new PatientRepository(conn ?? throw new InvalidOperationException("Connection string bulunamadı!"), logger);
 });
 builder.Services.AddScoped(sp =>
 {
     var cfg = sp.GetRequiredService<IConfiguration>();
-    var conn = cfg.GetConnectionString("DefaultConnection") ?? cfg["ConnectionStrings:DefaultConnection"];
+    var conn = Environment.GetEnvironmentVariable("CONNECTION_STRING") 
+               ?? cfg.GetConnectionString("DefaultConnection") 
+               ?? cfg["ConnectionStrings:DefaultConnection"];
     var logger = sp.GetRequiredService<ILogger<DepartmentRepository>>();
-    return new DepartmentRepository(conn ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found."), logger);
+    return new DepartmentRepository(conn ?? throw new InvalidOperationException("Connection string bulunamadı!"), logger);
 });
 builder.Services.AddScoped(sp =>
 {
     var cfg = sp.GetRequiredService<IConfiguration>();
-    var conn = cfg.GetConnectionString("DefaultConnection") ?? cfg["ConnectionStrings:DefaultConnection"];
+    var conn = Environment.GetEnvironmentVariable("CONNECTION_STRING") 
+               ?? cfg.GetConnectionString("DefaultConnection") 
+               ?? cfg["ConnectionStrings:DefaultConnection"];
     var logger = sp.GetRequiredService<ILogger<URoleRepository>>();
-    return new URoleRepository(conn ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found."), logger);
+    return new URoleRepository(conn ?? throw new InvalidOperationException("Connection string bulunamadı!"), logger);
 });
 
 builder.Services.AddScoped<IRepository<HospitadentApi.Entity.DoctorBranchCode>>(sp => sp.GetRequiredService<DoctorBranchCodeRepository>());
@@ -85,22 +95,92 @@ builder.Services.AddScoped<IRepository<HospitadentApi.Entity.UserWorkingSchedule
 builder.Services.AddScoped<IRepository<HospitadentApi.Entity.Appointment>>(sp => sp.GetRequiredService<AppointmentRepository>());
 builder.Services.AddScoped<IRepository<HospitadentApi.Entity.Patient>>(sp => sp.GetRequiredService<PatientRepository>());
 
+var secretKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") 
+                ?? builder.Configuration["JwtSettings:SecretKey"] 
+                ?? throw new InvalidOperationException("JWT SecretKey bulunamadı!");
+var issuer = Environment.GetEnvironmentVariable("JWT_ISSUER") 
+             ?? builder.Configuration["JwtSettings:Issuer"] 
+             ?? "HospitadentApi";
+var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") 
+               ?? builder.Configuration["JwtSettings:Audience"] 
+               ?? "HospitadentApi_Users";
+var expirationMinutes = int.Parse(
+    Environment.GetEnvironmentVariable("JWT_EXPIRATION_MINUTES") 
+    ?? builder.Configuration["JwtSettings:ExpirationInMinutes"] 
+    ?? "1440");
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = issuer,
+        ValidAudience = audience,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+        ClockSkew = TimeSpan.Zero
+    };
+});
+
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "Hospitadent API",
+        Version = "v1",
+        Description = "Hospitadent API - JWT Authentication ile korumalı"
+    });
+
+    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme. Örnek: \"Authorization: Bearer {token}\"",
+        Name = "Authorization",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+app.UseStaticFiles();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Hospitadent API v1");
+        c.InjectJavascript("/swagger-login.js");
+    });
 }
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

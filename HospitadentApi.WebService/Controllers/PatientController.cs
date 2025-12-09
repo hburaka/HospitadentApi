@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using HospitadentApi.Entity;
 using HospitadentApi.Repository;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
@@ -9,6 +10,7 @@ namespace HospitadentApi.WebService.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class PatientController : ControllerBase
     {
         private readonly PatientRepository _patientRepository;
@@ -20,9 +22,6 @@ namespace HospitadentApi.WebService.Controllers
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        /// <summary>
-        /// GET api/patient/{id}
-        /// </summary>
         [HttpGet("{id}", Name = "GetPatient")]
         public ActionResult<Patient> Get(int id)
         {
@@ -50,10 +49,6 @@ namespace HospitadentApi.WebService.Controllers
             }
         }
 
-        /// <summary>
-        /// Search patients by explicit criteria.
-        /// Example: GET api/patient/search?fullName=John%20Doe&mobile=5321112233&tcNo=12345678901&limit=25
-        /// </summary>
         [HttpGet("search", Name = "SearchPatients")]
         public ActionResult<IEnumerable<Patient>> Search(
             [FromQuery] int? id = null,
