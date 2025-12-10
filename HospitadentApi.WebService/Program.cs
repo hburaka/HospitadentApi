@@ -20,8 +20,20 @@ builder.Services.AddScoped(sp =>
     var conn = Environment.GetEnvironmentVariable("CONNECTION_STRING") 
                ?? cfg.GetConnectionString("DefaultConnection") 
                ?? cfg["ConnectionStrings:DefaultConnection"];
+    
+    if (string.IsNullOrWhiteSpace(conn))
+    {
+        throw new InvalidOperationException("Connection string bulunamadı! CONNECTION_STRING environment variable'ı kontrol edin.");
+    }
+    
     var logger = sp.GetRequiredService<ILogger<ClinicRepository>>();
-    return new ClinicRepository(conn ?? throw new InvalidOperationException("Connection string bulunamadı!"), logger);
+    // Connection string'i logla (güvenlik için şifreyi gizle)
+    var safeConn = conn.Contains("Pwd=") 
+        ? conn.Substring(0, conn.IndexOf("Pwd=") + 4) + "***" 
+        : conn;
+    logger.LogInformation("ClinicRepository için connection string kullanılıyor: {ConnectionString}", safeConn);
+    
+    return new ClinicRepository(conn, logger);
 });
 
 builder.Services.AddScoped(sp =>

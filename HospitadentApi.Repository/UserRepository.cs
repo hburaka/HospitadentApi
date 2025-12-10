@@ -609,9 +609,25 @@ namespace HospitadentApi.Repository
 
             if (!rd.IsDBNull(ordAllowedClinics))
             {
-                var csv = rd.GetString(ordAllowedClinics);
-                user.AllowedClinic = csv;
-                user.AllowedClinics = _clinicRepo.GetByIds(ParseIdList(csv)).ToList();
+                try
+                {
+                    var csv = rd.GetString(ordAllowedClinics);
+                    user.AllowedClinic = csv;
+                    var clinicIds = ParseIdList(csv);
+                    if (clinicIds.Count > 0)
+                    {
+                        user.AllowedClinics = _clinicRepo.GetByIds(clinicIds).ToList();
+                    }
+                    else
+                    {
+                        user.AllowedClinics = new List<Clinic>();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Error loading allowed clinics for user. Setting empty list.");
+                    user.AllowedClinics = new List<Clinic>();
+                }
             }
 
             if (!rd.IsDBNull(ordDepartment))

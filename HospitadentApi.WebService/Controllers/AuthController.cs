@@ -74,9 +74,15 @@ namespace HospitadentApi.WebService.Controllers
                         ?? "1440")
                 });
             }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogError(ex, "Configuration error during login for: {Username}. Error: {Error}", request.Username, ex.Message);
+                return StatusCode(500, new { message = "Sunucu yapılandırma hatası. Lütfen sistem yöneticisine başvurun." });
+            }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during login for: {Username}", request.Username);
+                _logger.LogError(ex, "Error during login for: {Username}. Exception Type: {ExceptionType}, Message: {Message}, StackTrace: {StackTrace}", 
+                    request.Username, ex.GetType().Name, ex.Message, ex.StackTrace);
                 return StatusCode(500, new { message = "Giriş işlemi sırasında bir hata oluştu." });
             }
         }
