@@ -10,7 +10,6 @@ namespace HospitadentApi.WebService.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
     public class ClinicController : ControllerBase
     {
         private readonly ClinicRepository _clinicRepository;
