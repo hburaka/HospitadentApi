@@ -5,6 +5,7 @@ using HospitadentApi.Repository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using System.Security.Claims;
 
 namespace HospitadentApi.WebService.Controllers
 {
@@ -129,5 +130,90 @@ namespace HospitadentApi.WebService.Controllers
                 return StatusCode(500, "Doktor randevuları sorgulanırken bir hata oluştu.");
             }
         }
+
+        [HttpPost(Name = "CreateAppointment")]
+        public ActionResult<Appointment> CreateAppointment([FromBody] CreateAppointmentRequest request)
+        {
+            try
+            {
+                if (request == null)
+                {
+                    _logger.LogWarning("CreateAppointment called with null request");
+                    return BadRequest("Randevu bilgileri gereklidir.");
+                }
+
+                if (request.ClinicId <= 0)
+                {
+                    _logger.LogWarning("CreateAppointment called with invalid clinicId: {ClinicId}", request.ClinicId);
+                    return BadRequest("Geçerli bir klinik ID'si gereklidir.");
+                }
+
+                if (request.DoctorId <= 0)
+                {
+                    _logger.LogWarning("CreateAppointment called with invalid doctorId: {DoctorId}", request.DoctorId);
+                    return BadRequest("Geçerli bir doktor ID'si gereklidir.");
+                }
+
+                if (request.StartDate >= request.EndDate)
+                {
+                    _logger.LogWarning("CreateAppointment called with invalid date range: start={StartDate}, end={EndDate}", 
+                        request.StartDate, request.EndDate);
+                    return BadRequest("Bitiş tarihi, başlangıç tarihinden sonra olmalıdır.");
+                }
+
+                // JWT token'dan kullanıcı ID'sini al
+                var userIdClaim = User.FindFirst("UserId")?.Value;
+                if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+                {
+                    _logger.LogWarning("CreateAppointment called but userId not found in token");
+                    return Unauthorized("Kullanıcı bilgisi bulunamadı.");
+                }
+
+                var appointment = new Appointment
+                {
+                    Clinic = new Clinic { Id = request.ClinicId },
+                    User = new User { Id = request.DoctorId },
+                    StartDate = request.StartDate,
+                    EndDate = request.EndDate,
+                    Description = request.Description ?? string.Empty,
+                    SavedBy = userId,
+                    SavedOn = Tools.GetTurkiyeDate(),
+                    Status = 0,
+                    IsEmergency = false,
+                    IsUrgent = false,
+                    IsConfirmed = false,
+                    AppointmentType = new AppointmentType { Id = 10 },
+                    AppointmentStatus = new AppointmentStatus { Id = 9 },
+                    TreatmentType = new TreatmentType { Id = 0 }
+                };
+
+                var newId = _appointmentRepository.Insert(appointment);
+                appointment.Id = newId;
+
+                _logger.LogInformation("Appointment created successfully: Id={Id}, clinicId={ClinicId}, doctorId={DoctorId}", 
+                    newId, request.ClinicId, request.DoctorId);
+
+                return CreatedAtAction(nameof(GetByCriteria), new { id = newId }, appointment);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "CreateAppointment bad request");
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unhandled error in CreateAppointment");
+                return StatusCode(500, "Randevu oluşturulurken bir hata oluştu.");
+            }
+        }
+    }
+
+    public class CreateAppointmentRequest
+    {
+        public int ClinicId { get; set; }
+        public int DoctorId { get; set; }
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public string? Description { get; set; }
     }
 }

@@ -243,8 +243,97 @@ namespace HospitadentApi.Repository
             return result;
         }
 
+        public int Insert(Appointment instance)
+        {
+            if (instance == null)
+                throw new ArgumentNullException(nameof(instance));
+
+            _logger.LogDebug("Insert called: clinicId={ClinicId}, doctorId={DoctorId}, startDate={StartDate}, endDate={EndDate}",
+                instance.Clinic?.Id, instance.User?.Id, instance.StartDate, instance.EndDate);
+
+            try
+            {
+                using var db = new DBHelper(_connectionString);
+
+                var sql = @"
+                    INSERT INTO appointments (
+                        clinic_id,
+                        doctor_id,
+                        assistant_id,
+                        patient_id,
+                        appointment_type,
+                        appointment_status,
+                        treatment_type,
+                        start_date,
+                        end_date,
+                        description,
+                        is_emergency,
+                        is_urgent,
+                        covid19_status,
+                        pc_id,
+                        interpreter_id,
+                        company_id,
+                        saved_by,
+                        saved_on,
+                        deleted_by,
+                        status
+                    ) VALUES (
+                        @clinic_id,
+                        @doctor_id,
+                        @assistant_id,
+                        @patient_id,
+                        @appointment_type,
+                        @appointment_status,
+                        @treatment_type,
+                        @start_date,
+                        @end_date,
+                        @description,
+                        @is_emergency,
+                        @is_urgent,
+                        @covid19_status,
+                        @pc_id,
+                        @interpreter_id,
+                        @company_id,
+                        @saved_by,
+                        @saved_on,
+                        @deleted_by,
+                        @status
+                    );
+                    SELECT LAST_INSERT_ID();";
+
+                db.ParametreEkle("@clinic_id", instance.Clinic?.Id ?? 0);
+                db.ParametreEkle("@doctor_id", instance.User?.Id ?? 0);
+                db.ParametreEkle("@assistant_id", 0);
+                db.ParametreEkle("@patient_id", instance.Patient?.Id ?? 0);
+                db.ParametreEkle("@appointment_type", instance.AppointmentType?.Id ?? 10);
+                db.ParametreEkle("@appointment_status", instance.AppointmentStatus?.Id ?? 9);
+                db.ParametreEkle("@treatment_type", instance.TreatmentType?.Id ?? 0);
+                db.ParametreEkle("@start_date", instance.StartDate);
+                db.ParametreEkle("@end_date", instance.EndDate);
+                db.ParametreEkle("@description", instance.Description ?? string.Empty);
+                db.ParametreEkle("@is_emergency", instance.IsEmergency ? 1 : 0);
+                db.ParametreEkle("@is_urgent", instance.IsUrgent ? 1 : 0);
+                db.ParametreEkle("@covid19_status", 0);
+                db.ParametreEkle("@pc_id", 0);
+                db.ParametreEkle("@interpreter_id", 0);
+                db.ParametreEkle("@company_id", 8863517910);
+                db.ParametreEkle("@saved_by", instance.SavedBy);
+                db.ParametreEkle("@saved_on", instance.SavedOn);
+                db.ParametreEkle("@deleted_by", 0);
+                db.ParametreEkle("@status", instance.Status);
+
+                var newId = db.ExecuteScalarSql(sql);
+                _logger.LogInformation("Appointment inserted successfully: Id={Id}", newId);
+                return newId;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error inserting appointment");
+                throw new Exception("Randevu eklenirken bir hata oluştu.", ex);
+            }
+        }
+
         // IRepository required members left as NotImplemented
-        public int Insert(Appointment instance) => throw new NotImplementedException();
         public int Delete(Appointment instance) => throw new NotImplementedException();
         public int Update(Appointment instance) => throw new NotImplementedException();
         public Appointment? Load(int Id) => throw new NotImplementedException();
