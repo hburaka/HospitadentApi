@@ -178,7 +178,7 @@ namespace HospitadentApi.WebService.Controllers
                     Description = request.Description ?? string.Empty,
                     SavedBy = userId,
                     SavedOn = Tools.GetTurkiyeDate(),
-                    Status = 0,
+                    Status = 1,
                     IsEmergency = false,
                     IsUrgent = false,
                     IsConfirmed = false,

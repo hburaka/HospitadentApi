@@ -320,7 +320,7 @@ namespace HospitadentApi.Repository
                 db.ParametreEkle("@saved_by", instance.SavedBy);
                 db.ParametreEkle("@saved_on", instance.SavedOn);
                 db.ParametreEkle("@deleted_by", 0);
-                db.ParametreEkle("@status", instance.Status);
+                db.ParametreEkle("@status", 1);
 
                 var newId = db.ExecuteScalarSql(sql);
                 _logger.LogInformation("Appointment inserted successfully: Id={Id}", newId);
