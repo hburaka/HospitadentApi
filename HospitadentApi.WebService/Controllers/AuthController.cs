@@ -1,10 +1,8 @@
 using HospitadentApi.Entity;
 using HospitadentApi.Repository;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -20,13 +18,11 @@ namespace HospitadentApi.WebService.Controllers
         private readonly UserRepository _userRepository;
         private readonly IConfiguration _configuration;
         private readonly ILogger<AuthController> _logger;
-        private readonly IWebHostEnvironment _environment;
 
         public AuthController(
             UserRepository userRepository,
             IConfiguration configuration,
-            ILogger<AuthController> logger,
-            IWebHostEnvironment environment)
+            ILogger<AuthController> logger)
         {
             _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
@@ -80,18 +76,7 @@ namespace HospitadentApi.WebService.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during login for: {Username}. Error: {ErrorMessage}", request.Username, ex.Message);
-                
-                // Development'ta detaylı hata, Production'da generic mesaj
-                if (_environment.IsDevelopment())
-                {
-                    return StatusCode(500, new { 
-                        message = "Giriş işlemi sırasında bir hata oluştu.",
-                        error = ex.Message,
-                        stackTrace = ex.StackTrace
-                    });
-                }
-                
+                _logger.LogError(ex, "Error during login for: {Username}", request.Username);
                 return StatusCode(500, new { message = "Giriş işlemi sırasında bir hata oluştu." });
             }
         }
