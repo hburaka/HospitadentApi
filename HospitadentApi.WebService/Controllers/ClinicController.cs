@@ -76,5 +76,22 @@ namespace HospitadentApi.WebService.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
+
+        [HttpGet("test", Name = "GetTest")]
+        public ActionResult<Clinic> Test()
+        {
+            _logger.LogDebug("GetTest called");
+
+            try
+            {
+                var clinics = new Clinic { Name = "test" };
+                return Ok(clinics);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading clinics");
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
     }
 }
