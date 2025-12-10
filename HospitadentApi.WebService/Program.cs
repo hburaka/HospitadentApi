@@ -130,11 +130,12 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// DataProtection: Production'da memory storage kullan (container içinde kalıcı storage'a gerek yok)
+// DataProtection: Production'da ephemeral file system kullan (container içinde kalıcı storage'a gerek yok)
 if (builder.Environment.IsProduction())
 {
+    var tempKeysPath = Path.Combine(Path.GetTempPath(), "HospitadentApi-DataProtection-Keys");
     builder.Services.AddDataProtection()
-        .PersistKeysToMemory(); // Keys'i memory'de sakla (container restart'ta kaybolur ama sorun değil)
+        .PersistKeysToFileSystem(new DirectoryInfo(tempKeysPath)); // Keys'i geçici dosya sisteminde sakla (container restart'ta kaybolur ama sorun değil)
 }
 
 builder.Services.AddControllers();
