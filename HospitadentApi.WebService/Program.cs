@@ -151,6 +151,10 @@ if (builder.Environment.IsProduction())
 }
 
 builder.Services.AddControllers();
+
+// Register IHttpClientFactory so controllers/services can request IHttpClientFactory or HttpClient via DI
+builder.Services.AddHttpClient();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
