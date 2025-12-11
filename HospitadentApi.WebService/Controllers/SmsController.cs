@@ -23,15 +23,9 @@ namespace HospitadentApi.WebService.Controllers
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         }
 
-        //[HttpGet]
-        //public IActionResult Index()
-        //{
-        //    return View();
-        //}
-
         /// <summary>
         /// Sends an SMS through Asist SOAP service.
-        /// POST api/sms/send (form or JSON body).
+        /// POST api/sms/send-sms (form or JSON body).
         /// Parameters:
         ///  - gsm (required)
         ///  - message (optional when generateCode=true; required when generateCode=false)
@@ -39,7 +33,7 @@ namespace HospitadentApi.WebService.Controllers
         ///    If message contains "{code}" it will be replaced; otherwise the code is appended.
         ///  - when generateCode=false the provided message is sent as-is.
         /// </summary>
-        [HttpPost("send")]
+        [HttpPost("send-sms")]
         public async Task<IActionResult> Send([FromForm] string gsm, [FromForm] string? message, [FromForm] bool generateCode = true)
         {
             if (string.IsNullOrWhiteSpace(gsm))
@@ -121,29 +115,29 @@ namespace HospitadentApi.WebService.Controllers
             string safeMessage = System.Security.SecurityElement.Escape(mesaj);
 
             string soapEnvelope = $@"<soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"" xmlns=""https://webservice.asistiletisim.com.tr/SmsProxy"">
-  <soapenv:Header/>
-  <soapenv:Body>
-    <sendSms>
-      <requestXml><![CDATA[
-<SendSms>
-  <Username>{username}</Username>
-  <Password>{password}</Password>
-  <UserCode>{userCode}</UserCode>
-  <AccountId>{accountId}</AccountId>
-  <Originator>{originator}</Originator>
-  <SendDate></SendDate>
-  <ValidityPeriod>60</ValidityPeriod>
-  <MessageText>{safeMessage}</MessageText>
-  <IsCheckBlackList>0</IsCheckBlackList>
-  <IsEncryptedParameter>0</IsEncryptedParameter>
-  <ReceiverList>
-    <Receiver>{gsm}</Receiver>
-  </ReceiverList>
-</SendSms>
-      ]]></requestXml>
-    </sendSms>
-  </soapenv:Body>
-</soapenv:Envelope>";
+                              <soapenv:Header/>
+                              <soapenv:Body>
+                                <sendSms>
+                                  <requestXml><![CDATA[
+                            <SendSms>
+                              <Username>{username}</Username>
+                              <Password>{password}</Password>
+                              <UserCode>{userCode}</UserCode>
+                              <AccountId>{accountId}</AccountId>
+                              <Originator>{originator}</Originator>
+                              <SendDate></SendDate>
+                              <ValidityPeriod>60</ValidityPeriod>
+                              <MessageText>{safeMessage}</MessageText>
+                              <IsCheckBlackList>0</IsCheckBlackList>
+                              <IsEncryptedParameter>0</IsEncryptedParameter>
+                              <ReceiverList>
+                                <Receiver>{gsm}</Receiver>
+                              </ReceiverList>
+                            </SendSms>
+                                  ]]></requestXml>
+                                </sendSms>
+                              </soapenv:Body>
+                            </soapenv:Envelope>";
 
             var client = _httpClientFactory.CreateClient();
             using var request = new HttpRequestMessage(HttpMethod.Post, serviceUrl)
@@ -157,6 +151,40 @@ namespace HospitadentApi.WebService.Controllers
 
             var resultXml = await response.Content.ReadAsStringAsync();
             return resultXml;
+        }
+
+        /// <summary>
+        /// Sends an activation token SMS via IVT.
+        /// POST api/sms/send-ivt (form or JSON body).
+        /// Parameters:
+        ///  - gsm (required)
+        /// </summary>
+        [HttpPost("send-ivt")]
+        public async Task<IActionResult> SendIvt([FromForm] string gsm)
+        {
+            if (string.IsNullOrWhiteSpace(gsm)) return BadRequest("gsm required");
+            var ivt = new Services.IvtClient(_httpClientFactory, _configuration); // better: inject IvtClient via DI
+            var ok = await ivt.SendActivationTokenAsync(gsm);
+            return ok ? Ok() : StatusCode(502, "IVT send failed");
+        }
+
+        /// <summary>
+        /// Verifies an activation token for IVT.
+        /// POST api/sms/verify-ivt (form or JSON body).
+        /// Parameters:
+        ///  - gsm (required)
+        ///  - activationToken (required)
+        /// </summary>
+        [HttpPost("verify-ivt")]
+        public async Task<IActionResult> VerifyIvt([FromForm] string gsm, [FromForm] string activationToken)
+        {
+            if (string.IsNullOrWhiteSpace(gsm) || string.IsNullOrWhiteSpace(activationToken))
+                return BadRequest("gsm and activationToken required");
+
+            var ivt = new Services.IvtClient(_httpClientFactory, _configuration); // better: inject IvtClient via DI
+            var accessToken = await ivt.GetAccessTokenAsync();
+            var valid = await ivt.VerifyActivationTokenAsync(accessToken, gsm, activationToken);
+            return Ok(new { valid });
         }
     }
 }
