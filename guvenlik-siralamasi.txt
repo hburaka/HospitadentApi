@@ -1,32 +1,51 @@
-Swagger UI production'da açık kalabilir
-Sadece Development kontrolü var
-Production'da kesinlikle kapatılmalı
-appsettings.json git'te olmamalı
-Hassas bilgiler içeriyor
-appsettings.Production.json oluşturulmalı
-ORTA öncelikli sorunlar
-CORS politikası yok
-Tüm origin'lere açık olabilir
-Sadece izin verilen domain'lerden erişime izin verilmeli
-Security headers eksik
-X-Content-Type-Options
-X-Frame-Options
-X-XSS-Protection
-Strict-Transport-Security
-Rate limiting yok
-Brute force saldırılarına karşı koruma yok
-Login endpoint'i özellikle riskli
-Error handling'de bilgi sızıntısı
-Exception mesajları direkt döndürülüyor
-Production'da generic mesajlar kullanılmalı
-Input validation eksik
-Data Annotations kullanılmıyor
-LoginRequest ve diğer DTO'larda validation yok
-DÜŞÜK öncelikli sorunlar
-SQL injection riski kontrolü
-Çoğu sorgu parametreli (iyi)
-Bazı yerlerde string interpolation var (kontrol edilmeli)
-HTTPS/HSTS ayarları
-HTTPS redirection var
-HSTS header'ı eklenebilir
-Hangi sorundan başlayalım? Öneri: önce kritik sorunları çözelim (1-3), sonra orta önceliklilere geçelim.
+1. appsettings.json Dosyasını Git'ten Çıkarmak
+   - appsettings.json dosyasını .gitignore'a eklemek
+   - Hassas bilgileri (connection string, API key'ler, secret'lar, SMS şifreleri) git'ten kaldırmak
+   - appsettings.json.example veya appsettings.Development.json.example template dosyası oluşturmak
+   - Mevcut appsettings.json dosyasındaki hassas bilgileri (SMS şifresi vb.) git'ten kaldırmak
+
+ORTA ÖNCELİKLİ GÜVENLİK ÖNLEMLERİ
+----------------------------------
+
+2. CORS Politikası Uygulamak
+   - Program.cs'de AddCors ve UseCors middleware'lerini eklemek
+   - Tüm origin'lere açık erişimi kapatmak
+   - Sadece izin verilen domain'lerden erişime izin vermek
+   - Production'da sadece güvenilir domain'leri whitelist'e eklemek
+   - CORS policy'sini appsettings.json'dan yapılandırılabilir hale getirmek
+
+3. Rate Limiting Uygulamak
+   - AspNetCoreRateLimit veya benzeri bir paket eklemek
+   - API endpoint'lerine rate limiting eklemek
+   - Brute force saldırılarına karşı koruma sağlamak
+   - Login endpoint'ine özellikle rate limiting uygulamak (örn: 5 deneme/dakika)
+   - IP bazlı veya kullanıcı bazlı rate limiting yapılandırmak
+
+4. Error Handling'de Bilgi Sızıntısını Önlemek
+   - Global exception handler middleware oluşturmak
+   - Exception mesajlarını direkt döndürmemek
+   - Production'da generic hata mesajları kullanmak ("Bir hata oluştu" gibi)
+   - Detaylı hata bilgilerini sadece Development ortamında göstermek
+   - Controller'lardaki catch bloklarında exception.Message kullanımını kaldırmak
+   - Örnek sorunlu yerler:
+     * PatientController.cs satır 48: return StatusCode(500, $"Internal server error: {ex.Message}");
+     * ClinicController.cs satır 52: return StatusCode(500, $"Internal server error: {ex.Message}");
+     * Diğer controller'larda benzer durumlar
+
+5. Input Validation Eklemek
+   - LoginRequest DTO'suna Data Annotations eklemek
+     * [Required] attribute'ları eklemek
+     * [StringLength] veya [MinLength] kısıtlamaları eklemek
+   - CreateAppointmentRequest ve diğer tüm DTO'larda validation attribute'ları eklemek
+   - ModelState.IsValid kontrolü yapmak (controller'larda)
+   - Custom validation attribute'ları oluşturmak (gerekirse)
+   - FluentValidation kütüphanesi kullanmayı değerlendirmek
+
+DÜŞÜK ÖNCELİKLİ GÜVENLİK ÖNLEMLERİ
+-----------------------------------
+
+6. SQL Injection Riskini Kontrol Etmek
+   - Tüm SQL sorgularının parametreli olduğundan emin olmak
+   - String interpolation kullanılan yerleri tespit etmek ve düzeltmek
+   - Repository katmanında raw SQL sorgularını gözden geçirmek
+   - Code review yaparak güvenlik açıklarını tespit etmek
