@@ -159,20 +159,19 @@ namespace HospitadentApi.WebService.Controllers
 
         /// <summary>
         /// Sends an informational SMS without generating verification code.
-        /// POST api/sms/send-info (form or JSON body).
-        /// Parameters:
-        ///  - gsm (required)
-        ///  - message (required)
+        /// POST api/sms/send-info (JSON body).
+        /// Body: SendInfoRequest
         /// </summary>
         [HttpPost("send-info")]
-        public async Task<IActionResult> SendInfo([FromForm] string gsm, [FromForm] string message)
+        public async Task<IActionResult> SendInfo([FromBody] SendInfoRequest request)
         {
-            if (string.IsNullOrWhiteSpace(gsm))
+            if (request == null) return BadRequest("Request body required.");
+            if (string.IsNullOrWhiteSpace(request.Gsm))
             {
                 return BadRequest("Parameter 'gsm' is required.");
             }
 
-            if (string.IsNullOrWhiteSpace(message))
+            if (string.IsNullOrWhiteSpace(request.Message))
             {
                 return BadRequest("Parameter 'message' is required.");
             }
@@ -187,7 +186,7 @@ namespace HospitadentApi.WebService.Controllers
                 string originator = _configuration["Sms:Originator"] ?? "BASLIGIN"; // up to 11 chars
 
                 // Send SMS with the provided message
-                string responseXml = await SendSmsAsync(gsm, message, username, password, userCode, accountId, originator);
+                string responseXml = await SendSmsAsync(request.Gsm, request.Message, username, password, userCode, accountId, originator);
 
                 // Return provider response XML
                 return Content(responseXml, "application/xml", Encoding.UTF8);
@@ -281,7 +280,12 @@ namespace HospitadentApi.WebService.Controllers
             }
         }
 
-        // DTOs used by register-permission endpoint
+        // DTOs used by endpoints
+        public sealed record SendInfoRequest(
+            string Gsm,
+            string Message
+        );
+
         public sealed record RegisterPermissionRequest(
             string Gsm,
             string ActivationToken,
