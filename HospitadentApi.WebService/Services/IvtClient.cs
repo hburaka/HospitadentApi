@@ -118,127 +118,110 @@ namespace HospitadentApi.WebService.Services
                    && root["data"]?.Value<bool>() == true;
         }
 
-        // Register permission directly after activation token(s) confirmed.
-        // This implements the richer payload for POST /permission/send described in the spec.
-        public async Task<bool> RegisterPermissionAsync(
-            string gsm,
-            string activationToken,
-            string firstName,
-            string lastName,
-            string? identityNumber = null,
-            DateTime? birthDate = null,
-            IEnumerable<string>? contactPermissionTypes = null,
-            IEnumerable<ConsentFile>? files = null)
-        {
-            if (!IsValidGsm(gsm))
-                throw new ArgumentException("GSM must be in format +905xxxxxxxx (e.g. +905xxxxxxxx).", nameof(gsm));
-            if (string.IsNullOrWhiteSpace(activationToken))
-                throw new ArgumentException("activationToken must be provided.", nameof(activationToken));
-            if (string.IsNullOrWhiteSpace(firstName))
-                throw new ArgumentException("firstName must be provided.", nameof(firstName));
-            if (string.IsNullOrWhiteSpace(lastName))
-                throw new ArgumentException("lastName must be provided.", nameof(lastName));
 
-            var token = await GetAccessTokenAsync();
-            var client = _httpFactory.CreateClient();
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        //public async Task<bool> RegisterPermissionAsync(string gsm, string activationToken, string firstName, string lastName, string? identityNumber = null, DateTime? birthDate = null, IEnumerable<string>? contactPermissionTypes = null, IEnumerable<ConsentFile>? files = null)
+        //{
+        //    if (!IsValidGsm(gsm))
+        //        throw new ArgumentException("GSM must be in format +905xxxxxxxx (e.g. +905xxxxxxxx).", nameof(gsm));
+        //    if (string.IsNullOrWhiteSpace(activationToken))
+        //        throw new ArgumentException("activationToken must be provided.", nameof(activationToken));
+        //    if (string.IsNullOrWhiteSpace(firstName))
+        //        throw new ArgumentException("firstName must be provided.", nameof(firstName));
+        //    if (string.IsNullOrWhiteSpace(lastName))
+        //        throw new ArgumentException("lastName must be provided.", nameof(lastName));
 
-            var url = $"{BaseUrl}/permission/send";
+        //    var token = await GetAccessTokenAsync();
+        //    var client = _httpFactory.CreateClient();
+        //    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            // API examples expect msisdn without leading '+' (e.g. 905301234567)
-            var gsmForApi = gsm.Trim().TrimStart('+');
+        //    var url = $"{BaseUrl}/permission/send";
 
-            // build contactPermissions array (default to Sms + Call if none supplied)
-            var permissions = new List<object>();
-            if (contactPermissionTypes != null)
-            {
-                foreach (var p in contactPermissionTypes)
-                {
-                    if (string.IsNullOrWhiteSpace(p)) continue;
-                    permissions.Add(new { permissionType = p, confirmationValue = true });
-                }
-            }
-            if (permissions.Count == 0)
-            {
-                permissions.Add(new { permissionType = "Sms", confirmationValue = true });
-                permissions.Add(new { permissionType = "Call", confirmationValue = true });
-            }
+        //    // API examples expect msisdn without leading '+' (e.g. 905301234567)
+        //    var gsmForApi = gsm.Trim().TrimStart('+');
 
-            // build files array for gdprActivation.files - include fileName and fileBase64
-            var fileObjs = new List<object>();
-            if (files != null)
-            {
-                foreach (var f in files)
-                {
-                    if (string.IsNullOrWhiteSpace(f.Base64Content)) continue;
-                    fileObjs.Add(new
-                    {
-                        fileName = f.FileName ?? "consent.txt",
-                        fileType = f.MimeType ?? "application/octet-stream",
-                        content = f.Base64Content
-                    });
-                }
-            }
+        //    // build contactPermissions array (default to Sms + Call if none supplied)
+        //    var permissions = new List<object>();
+        //    if (contactPermissionTypes != null)
+        //    {
+        //        foreach (var p in contactPermissionTypes)
+        //        {
+        //            if (string.IsNullOrWhiteSpace(p)) continue;
+        //            permissions.Add(new { permissionType = p, confirmationValue = true });
+        //        }
+        //    }
+        //    if (permissions.Count == 0)
+        //    {
+        //        permissions.Add(new { permissionType = "Sms", confirmationValue = true });
+        //        permissions.Add(new { permissionType = "Call", confirmationValue = true });
+        //    }
 
-            var bodyObj = new
-            {
-                contacts = new[]
-                {
-                    new
-                    {
-                        iysRecipientType = "Bireysel",
-                        contactChannelType = "Msisdn",
-                        contactAddress = gsmForApi,
-                        isPrimary = true
-                    }
-                },
-                addresses = new object[] { },
-                customFieldValues = new object[] { },
-                activationTokens = new[]
-                {
-                    new
-                    {
-                        contactAddress = gsmForApi,
-                        activationToken = activationToken
-                    }
-                },
-                gdprActivation = new
-                {
-                    gdprTextId = _configuration["Ivt:GdprTextId"] ?? throw new InvalidOperationException("Ivt:GdprTextId missing"),
-                    files = fileObjs.ToArray()
-                },
-                contactPermissions = permissions.ToArray(),
-                requestETKPermission = true,
-                requestGDPRPermission = true,
-                identityNumber = identityNumber,
-                firstName = firstName,
-                lastName = lastName,
-                birthDate = birthDate?.ToString("yyyy-MM-dd")
-            };
+        //    // build files array for gdprActivation.files - include fileName and fileBase64
+        //    var fileObjs = new List<object>();
+        //    if (files != null)
+        //    {
+        //        foreach (var f in files)
+        //        {
+        //            if (string.IsNullOrWhiteSpace(f.Base64Content)) continue;
+        //            fileObjs.Add(new
+        //            {
+        //                fileName = f.FileName ?? "consent.txt",
+        //                fileType = f.MimeType ?? "application/octet-stream",
+        //                content = f.Base64Content
+        //            });
+        //        }
+        //    }
 
-            var jsonBody = JsonConvert.SerializeObject(bodyObj);
+        //    var bodyObj = new
+        //    {
+        //        contacts = new[]
+        //        {
+        //            new
+        //            {
+        //                iysRecipientType = "Bireysel",
+        //                contactChannelType = "Msisdn",
+        //                contactAddress = gsmForApi,
+        //                isPrimary = true
+        //            }
+        //        },
+        //        addresses = new object[] { },
+        //        customFieldValues = new object[] { },
+        //        activationTokens = new[]
+        //        {
+        //            new
+        //            {
+        //                contactAddress = gsmForApi,
+        //                activationToken = activationToken
+        //            }
+        //        },
+        //        gdprActivation = new
+        //        {
+        //            gdprTextId = _configuration["Ivt:GdprTextId"] ?? throw new InvalidOperationException("Ivt:GdprTextId missing"),
+        //            files = fileObjs.ToArray()
+        //        },
+        //        contactPermissions = permissions.ToArray(),
+        //        requestETKPermission = true,
+        //        requestGDPRPermission = true,
+        //        identityNumber = identityNumber,
+        //        firstName = firstName,
+        //        lastName = lastName,
+        //        birthDate = birthDate?.ToString("yyyy-MM-dd")
+        //    };
 
-            using var content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
-            using var resp = await client.PostAsync(url, content);
-            var respStr = await resp.Content.ReadAsStringAsync();
+        //    var jsonBody = JsonConvert.SerializeObject(bodyObj);
 
-            if (!resp.IsSuccessStatusCode)
-                throw new Exception($"IVT permission/send HTTP hata: {resp.StatusCode} - {respStr}");
+        //    using var content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
+        //    using var resp = await client.PostAsync(url, content);
+        //    var respStr = await resp.Content.ReadAsStringAsync();
 
-            var root = JObject.Parse(respStr);
+        //    if (!resp.IsSuccessStatusCode)
+        //        throw new Exception($"IVT permission/send HTTP hata: {resp.StatusCode} - {respStr}");
 
-            return root["isSuccess"]?.Value<bool>() == true && (root["data"] != null);
-        }
+        //    var root = JObject.Parse(respStr);
 
-        // New overload: register permission using an explicit accessToken and /permission/register endpoint
-        public async Task<bool> RegisterPermissionAsync(
-            string accessToken,
-            string gsm,
-            string activationToken,
-            string gdprTextId,
-            string firstName,
-            string lastName,
-            string? identityNumber = null)
+        //    return root["isSuccess"]?.Value<bool>() == true && (root["data"] != null);
+        //}
+
+        public async Task<bool> RegisterPermissionAsync(string accessToken, string gsm, string activationToken, string gdprTextId, string firstName, string lastName, string? identityNumber = null)
         {
             if (string.IsNullOrWhiteSpace(accessToken))
                 throw new ArgumentException("accessToken must be provided.", nameof(accessToken));
@@ -287,7 +270,7 @@ namespace HospitadentApi.WebService.Services
                 },
                 gdprActivation = new
                 {
-                    gdprTextId = gdprTextId,
+                    gdprTextId = _configuration["Ivt:GdprTextId"] ?? throw new InvalidOperationException("Ivt:GdprTextId missing"),
                     files = Array.Empty<object>()
                 },
                 contactPermissions = new[]
@@ -296,7 +279,12 @@ namespace HospitadentApi.WebService.Services
                     {
                         permissionType = "Sms",
                         confirmationValue = true
-                    }
+                    },
+                    new
+                    {
+                        permissionType = "Call",
+                        confirmationValue = true
+                    },
                 },
                 requestETKPermission = true,
                 requestGDPRPermission = true,
@@ -322,92 +310,92 @@ namespace HospitadentApi.WebService.Services
         }
 
 
-        public async Task<bool> CreateSmsPermissionAsync(string accessToken, string gsm, string activationToken, string firstName, string lastName, string? identityNumber = null)
-        {
-            if (string.IsNullOrWhiteSpace(accessToken))
-                throw new ArgumentException("accessToken must be provided.", nameof(accessToken));
-            if (!IsValidGsm("+" + gsm)) // gsm is expected as 905xxxxxxxx; validate by prefixing '+'
-                throw new ArgumentException("GSM must be in format 905xxxxxxxx (e.g. 905xxxxxxxx).", nameof(gsm));
-            if (string.IsNullOrWhiteSpace(activationToken))
-                throw new ArgumentException("activationToken must be provided.", nameof(activationToken));
-            if (string.IsNullOrWhiteSpace(firstName))
-                throw new ArgumentException("firstName must be provided.", nameof(firstName));
-            if (string.IsNullOrWhiteSpace(lastName))
-                throw new ArgumentException("lastName must be provided.", nameof(lastName));
+        //public async Task<bool> CreateSmsPermissionAsync(string accessToken, string gsm, string activationToken, string firstName, string lastName, string? identityNumber = null)
+        //{
+        //    if (string.IsNullOrWhiteSpace(accessToken))
+        //        throw new ArgumentException("accessToken must be provided.", nameof(accessToken));
+        //    if (!IsValidGsm("+" + gsm)) // gsm is expected as 905xxxxxxxx; validate by prefixing '+'
+        //        throw new ArgumentException("GSM must be in format 905xxxxxxxx (e.g. 905xxxxxxxx).", nameof(gsm));
+        //    if (string.IsNullOrWhiteSpace(activationToken))
+        //        throw new ArgumentException("activationToken must be provided.", nameof(activationToken));
+        //    if (string.IsNullOrWhiteSpace(firstName))
+        //        throw new ArgumentException("firstName must be provided.", nameof(firstName));
+        //    if (string.IsNullOrWhiteSpace(lastName))
+        //        throw new ArgumentException("lastName must be provided.", nameof(lastName));
 
-            // obtain gdprTextId from configuration
-            var gdprTextId = _configuration["Ivt:GdprTextId"] ?? throw new InvalidOperationException("Ivt:GdprTextId missing");
+        //    // obtain gdprTextId from configuration
+        //    var gdprTextId = _configuration["Ivt:GdprTextId"] ?? throw new InvalidOperationException("Ivt:GdprTextId missing");
 
-            var client = _httpFactory.CreateClient();
-            client.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", accessToken);
+        //    var client = _httpFactory.CreateClient();
+        //    client.DefaultRequestHeaders.Authorization =
+        //        new AuthenticationHeaderValue("Bearer", accessToken);
 
-            // ⚠️ Path'i Swagger'dan teyit et:
-            // Permission bölümünde "doğrudan izin kaydı" örneğinin altında geçen endpoint
-            // Örn: /permission/contact/add veya benzeri olabilir.
-            var url = $"{BaseUrl}/permission/contact/add";
+        //    // ⚠️ Path'i Swagger'dan teyit et:
+        //    // Permission bölümünde "doğrudan izin kaydı" örneğinin altında geçen endpoint
+        //    // Örn: /permission/contact/add veya benzeri olabilir.
+        //    var url = $"{BaseUrl}/permission/contact/add";
 
-            var bodyObj = new
-            {
-                contacts = new[]
-                {
-                    new
-                    {
-                        iysRecipientType = "Bireysel",
-                        contactChannelType = "Msisdn",
-                        contactAddress = gsm,
-                        isPrimary = true
-                    }
-                },
-                addresses = Array.Empty<object>(),
-                customFieldValues = Array.Empty<object>(),
-                activationTokens = new[]
-                {
-                    new
-                    {
-                        contactAddress = gsm,
-                        activationToken = activationToken
-                    }
-                },
-                gdprActivation = new
-                {
-                    gdprTextId = gdprTextId,
-                    files = Array.Empty<object>() // NOT: dokümana göre burada Base64 dosya bekleniyor
-                },
-                contactPermissions = new[]
-                {
-                    new
-                    {
-                        permissionType = "Sms",
-                        confirmationValue = true
-                    },
-                    new
-                    {
-                        permissionType = "Call",
-                        confirmationValue = true
-                    },
-                },
-                requestETKPermission = true,
-                requestGDPRPermission = true,
-                identityNumber = identityNumber,
-                firstName = firstName,
-                lastName = lastName,
-                birthDate = (string?)null
-            };
+        //    var bodyObj = new
+        //    {
+        //        contacts = new[]
+        //        {
+        //            new
+        //            {
+        //                iysRecipientType = "Bireysel",
+        //                contactChannelType = "Msisdn",
+        //                contactAddress = gsm,
+        //                isPrimary = true
+        //            }
+        //        },
+        //        addresses = Array.Empty<object>(),
+        //        customFieldValues = Array.Empty<object>(),
+        //        activationTokens = new[]
+        //        {
+        //            new
+        //            {
+        //                contactAddress = gsm,
+        //                activationToken = activationToken
+        //            }
+        //        },
+        //        gdprActivation = new
+        //        {
+        //            gdprTextId = gdprTextId,
+        //            files = Array.Empty<object>() // NOT: dokümana göre burada Base64 dosya bekleniyor
+        //        },
+        //        contactPermissions = new[]
+        //        {
+        //            new
+        //            {
+        //                permissionType = "Sms",
+        //                confirmationValue = true
+        //            },
+        //            new
+        //            {
+        //                permissionType = "Call",
+        //                confirmationValue = true
+        //            },
+        //        },
+        //        requestETKPermission = true,
+        //        requestGDPRPermission = true,
+        //        identityNumber = identityNumber,
+        //        firstName = firstName,
+        //        lastName = lastName,
+        //        birthDate = (string?)null
+        //    };
 
-            var jsonBody = JsonConvert.SerializeObject(bodyObj);
-            using var content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
-            using var resp = await client.PostAsync(url, content);
-            var respStr = await resp.Content.ReadAsStringAsync();
+        //    var jsonBody = JsonConvert.SerializeObject(bodyObj);
+        //    using var content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
+        //    using var resp = await client.PostAsync(url, content);
+        //    var respStr = await resp.Content.ReadAsStringAsync();
 
-            if (!resp.IsSuccessStatusCode)
-                throw new Exception($"IVT permission create HTTP hata: {resp.StatusCode} - {respStr}");
+        //    if (!resp.IsSuccessStatusCode)
+        //        throw new Exception($"IVT permission create HTTP hata: {resp.StatusCode} - {respStr}");
 
-            var root = JObject.Parse(respStr);
-            bool isSuccess = root["isSuccess"]?.Value<bool>() ?? false;
-            // data dolu geliyorsa (citizen kaydı vs.) zaten başarılıdır
-            return isSuccess;
-        }
+        //    var root = JObject.Parse(respStr);
+        //    bool isSuccess = root["isSuccess"]?.Value<bool>() ?? false;
+        //    // data dolu geliyorsa (citizen kaydı vs.) zaten başarılıdır
+        //    return isSuccess;
+        //}
 
 
         public async Task<bool> VerifyActivationTokenAsync(string accessToken, string gsm, string activationToken)
