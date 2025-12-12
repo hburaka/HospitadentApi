@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.DataProtection;
 using System.Text;
 using DotNetEnv;
+using HospitadentApi.WebService.Services;
 
 Env.Load();
 
@@ -154,6 +155,10 @@ builder.Services.AddControllers();
 
 // Register IHttpClientFactory so controllers/services can request IHttpClientFactory or HttpClient via DI
 builder.Services.AddHttpClient();
+
+// Register IvtClient so it can be injected into controllers (singleton to preserve token cache)
+builder.Services.AddSingleton<IvtClient>(sp =>
+    new IvtClient(sp.GetRequiredService<IHttpClientFactory>(), sp.GetRequiredService<IConfiguration>()));
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
