@@ -157,8 +157,7 @@ builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 
 // Register IvtClient so it can be injected into controllers (singleton to preserve token cache)
-builder.Services.AddSingleton<IvtClient>(sp =>
-    new IvtClient(sp.GetRequiredService<IHttpClientFactory>(), sp.GetRequiredService<IConfiguration>()));
+builder.Services.AddSingleton<IvtClient>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>

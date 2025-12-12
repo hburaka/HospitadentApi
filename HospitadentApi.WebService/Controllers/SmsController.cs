@@ -6,6 +6,8 @@ using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using HospitadentApi.WebService.Services;
 
 namespace HospitadentApi.WebService.Controllers
 {
@@ -16,11 +18,13 @@ namespace HospitadentApi.WebService.Controllers
     {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConfiguration _configuration;
+        private readonly IvtClient _ivtClient;
 
-        public SmsController(IHttpClientFactory httpClientFactory, IConfiguration configuration)
+        public SmsController(IHttpClientFactory httpClientFactory, IConfiguration configuration, IvtClient ivtClient)
         {
             _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            _ivtClient = ivtClient ?? throw new ArgumentNullException(nameof(ivtClient));
         }
 
         /// <summary>
@@ -208,8 +212,7 @@ namespace HospitadentApi.WebService.Controllers
         public async Task<IActionResult> SendIvt([FromForm] string gsm)
         {
             if (string.IsNullOrWhiteSpace(gsm)) return BadRequest("gsm required");
-            var ivt = new Services.IvtClient(_httpClientFactory, _configuration); // better: inject IvtClient via DI
-            var ok = await ivt.SendActivationTokenAsync(gsm);
+            var ok = await _ivtClient.SendActivationTokenAsync(gsm);
             return ok ? Ok() : StatusCode(502, "IVT send failed");
         }
 
@@ -226,10 +229,66 @@ namespace HospitadentApi.WebService.Controllers
             if (string.IsNullOrWhiteSpace(gsm) || string.IsNullOrWhiteSpace(activationToken))
                 return BadRequest("gsm and activationToken required");
 
-            var ivt = new Services.IvtClient(_httpClientFactory, _configuration); // better: inject IvtClient via DI
-            var accessToken = await ivt.GetAccessTokenAsync();
-            var valid = await ivt.VerifyActivationTokenAsync(accessToken, gsm, activationToken);
+            var accessToken = await _ivtClient.GetAccessTokenAsync();
+            var valid = await _ivtClient.VerifyActivationTokenAsync(accessToken, gsm, activationToken);
             return Ok(new { valid });
         }
+
+        /// <summary>
+        /// Registers permission directly after activation token confirmation.
+        /// POST api/sms/register-permission (JSON body).
+        /// Body: RegisterPermissionRequest
+        /// </summary>
+        [HttpPost("register-permission")]
+        public async Task<IActionResult> RegisterPermission([FromBody] RegisterPermissionRequest request)
+        {
+            if (request == null) return BadRequest("Request body required.");
+            if (string.IsNullOrWhiteSpace(request.Gsm)) return BadRequest("gsm required.");
+            if (string.IsNullOrWhiteSpace(request.ActivationToken)) return BadRequest("activationToken required.");
+            if (string.IsNullOrWhiteSpace(request.FirstName)) return BadRequest("firstName required.");
+            if (string.IsNullOrWhiteSpace(request.LastName)) return BadRequest("lastName required.");
+
+            try
+            {
+                var accessToken = await _ivtClient.GetAccessTokenAsync();
+
+                // allow caller to override gdprTextId, otherwise use configured value
+                var gdprTextId = request.GdprTextId ?? _configuration["Ivt:GdprTextId"] ?? throw new InvalidOperationException("Ivt:GdprTextId missing");
+
+                var success = await _ivtClient.RegisterPermissionAsync(
+                    accessToken: accessToken,
+                    gsm: request.Gsm,
+                    activationToken: request.ActivationToken,
+                    gdprTextId: gdprTextId,
+                    firstName: request.FirstName,
+                    lastName: request.LastName,
+                    identityNumber: request.IdentityNumber
+                );
+
+                return success ? Ok() : StatusCode(502, "IVT permission/register failed");
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (HttpRequestException ex)
+            {
+                return StatusCode(502, ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        // DTOs used by register-permission endpoint
+        public sealed record RegisterPermissionRequest(
+            string Gsm,
+            string ActivationToken,
+            string FirstName,
+            string LastName,
+            string? IdentityNumber = null,
+            string? GdprTextId = null
+        );
     }
 }
