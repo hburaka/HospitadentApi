@@ -106,8 +106,8 @@ namespace HospitadentApi.WebService.Controllers
             }
         }
 
-        [HttpPost("criteria", Name = "GetSchedulesByCriteria")]
-        public ActionResult<IEnumerable<UserWorkingSchedule>> GetByCriteria([FromBody] ScheduleCriteria criteria)
+        [HttpGet("GetByCriteria", Name = "GetSchedulesByCriteria")]
+        public ActionResult<IEnumerable<UserWorkingSchedule>> GetByCriteria([FromQuery] ScheduleCriteria criteria)
         {
             _logger.LogDebug("GetByCriteria called: {@Criteria}", criteria);
 
@@ -115,6 +115,12 @@ namespace HospitadentApi.WebService.Controllers
             {
                 _logger.LogWarning("GetByCriteria called with null criteria");
                 return BadRequest("Criteria must be provided.");
+            }
+
+            if (criteria.UserId <= 0)
+            {
+                _logger.LogWarning("GetByCriteria called with invalid UserId: {UserId}", criteria.UserId);
+                return BadRequest("UserId must be provided and greater than zero.");
             }
 
             try
@@ -139,7 +145,6 @@ namespace HospitadentApi.WebService.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
-
     }
 
     public class ScheduleCriteria
