@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using System;
@@ -151,6 +151,51 @@ namespace HospitadentApi.WebService.Controllers
 
             var resultXml = await response.Content.ReadAsStringAsync();
             return resultXml;
+        }
+
+        /// <summary>
+        /// Sends an informational SMS without generating verification code.
+        /// POST api/sms/send-info (form or JSON body).
+        /// Parameters:
+        ///  - gsm (required)
+        ///  - message (required)
+        /// </summary>
+        [HttpPost("send-info")]
+        public async Task<IActionResult> SendInfo([FromForm] string gsm, [FromForm] string message)
+        {
+            if (string.IsNullOrWhiteSpace(gsm))
+            {
+                return BadRequest("Parameter 'gsm' is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                return BadRequest("Parameter 'message' is required.");
+            }
+
+            try
+            {
+                // Read credentials from configuration, fallback to placeholders if missing
+                string username = _configuration["Sms:Username"] ?? "API_KULLANICI_ADI";
+                string password = _configuration["Sms:Password"] ?? "API_SIFRE";
+                string userCode = _configuration["Sms:UserCode"] ?? "USER_CODE";
+                string accountId = _configuration["Sms:AccountId"] ?? "ACCOUNT_ID";
+                string originator = _configuration["Sms:Originator"] ?? "BASLIGIN"; // up to 11 chars
+
+                // Send SMS with the provided message
+                string responseXml = await SendSmsAsync(gsm, message, username, password, userCode, accountId, originator);
+
+                // Return provider response XML
+                return Content(responseXml, "application/xml", Encoding.UTF8);
+            }
+            catch (HttpRequestException ex)
+            {
+                return StatusCode(502, ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
         }
 
         /// <summary>
