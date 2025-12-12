@@ -253,7 +253,7 @@ namespace HospitadentApi.WebService.Controllers
                 var accessToken = await _ivtClient.GetAccessTokenAsync();
 
                 // allow caller to override gdprTextId, otherwise use configured value
-                var gdprTextId = request.GdprTextId ?? _configuration["Ivt:GdprTextId"] ?? throw new InvalidOperationException("Ivt:GdprTextId missing");
+                var gdprTextId = _configuration["Ivt:GdprTextId"] ?? throw new InvalidOperationException("Ivt:GdprTextId missing");
 
                 var success = await _ivtClient.RegisterPermissionAsync(
                     accessToken: accessToken,
@@ -287,8 +287,7 @@ namespace HospitadentApi.WebService.Controllers
             string ActivationToken,
             string FirstName,
             string LastName,
-            string? IdentityNumber = null,
-            string? GdprTextId = null
+            string? IdentityNumber = null
         );
     }
 }
