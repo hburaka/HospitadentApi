@@ -144,6 +144,9 @@ namespace HospitadentApi.WebService.Controllers
                             </soapenv:Envelope>";
 
             var client = _httpClientFactory.CreateClient();
+            // SMS servisi için timeout: 30 saniye (varsayılan 100 saniye çok uzun)
+            client.Timeout = TimeSpan.FromSeconds(30);
+            
             using var request = new HttpRequestMessage(HttpMethod.Post, serviceUrl)
             {
                 Content = new StringContent(soapEnvelope, Encoding.UTF8, "text/xml")
@@ -191,13 +194,21 @@ namespace HospitadentApi.WebService.Controllers
                 // Return provider response XML
                 return Content(responseXml, "application/xml", Encoding.UTF8);
             }
+            catch (TaskCanceledException ex) when (ex.InnerException is TimeoutException)
+            {
+                return StatusCode(504, "SMS servisi yanıt vermedi (timeout). Lütfen daha sonra tekrar deneyin.");
+            }
+            catch (TaskCanceledException ex)
+            {
+                return StatusCode(504, "SMS servisi yanıt vermedi (timeout). Lütfen daha sonra tekrar deneyin.");
+            }
             catch (HttpRequestException ex)
             {
-                return StatusCode(502, ex.Message);
+                return StatusCode(502, $"SMS servisi hatası: {ex.Message}");
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ex.Message);
+                return StatusCode(500, $"Sunucu hatası: {ex.Message}");
             }
         }
 
