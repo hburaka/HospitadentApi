@@ -162,19 +162,20 @@ namespace HospitadentApi.WebService.Controllers
 
         /// <summary>
         /// Sends an informational SMS without generating verification code.
-        /// POST api/sms/send-info (JSON body).
-        /// Body: SendInfoRequest
+        /// POST api/sms/send-info (form data).
+        /// Parameters:
+        ///  - gsm (required)
+        ///  - message (required)
         /// </summary>
         [HttpPost("send-info")]
-        public async Task<IActionResult> SendInfo([FromBody] SendInfoRequest request)
+        public async Task<IActionResult> SendInfo([FromForm] string gsm, [FromForm] string message)
         {
-            if (request == null) return BadRequest("Request body required.");
-            if (string.IsNullOrWhiteSpace(request.Gsm))
+            if (string.IsNullOrWhiteSpace(gsm))
             {
                 return BadRequest("Parameter 'gsm' is required.");
             }
 
-            if (string.IsNullOrWhiteSpace(request.Message))
+            if (string.IsNullOrWhiteSpace(message))
             {
                 return BadRequest("Parameter 'message' is required.");
             }
@@ -189,7 +190,7 @@ namespace HospitadentApi.WebService.Controllers
                 string originator = _configuration["Sms:Originator"] ?? "BASLIGIN"; // up to 11 chars
 
                 // Send SMS with the provided message
-                string responseXml = await SendSmsAsync(request.Gsm, request.Message, username, password, userCode, accountId, originator);
+                string responseXml = await SendSmsAsync(gsm, message, username, password, userCode, accountId, originator);
 
                 // Return provider response XML
                 return Content(responseXml, "application/xml", Encoding.UTF8);
