@@ -144,9 +144,6 @@ namespace HospitadentApi.WebService.Controllers
                             </soapenv:Envelope>";
 
             var client = _httpClientFactory.CreateClient();
-            // SMS servisi için timeout: 30 saniye (varsayılan 100 saniye çok uzun)
-            client.Timeout = TimeSpan.FromSeconds(30);
-            
             using var request = new HttpRequestMessage(HttpMethod.Post, serviceUrl)
             {
                 Content = new StringContent(soapEnvelope, Encoding.UTF8, "text/xml")
@@ -162,20 +159,19 @@ namespace HospitadentApi.WebService.Controllers
 
         /// <summary>
         /// Sends an informational SMS without generating verification code.
-        /// POST api/sms/send-info (form data).
-        /// Parameters:
-        ///  - gsm (required)
-        ///  - message (required)
+        /// POST api/sms/send-info (JSON body).
+        /// Body: SendInfoRequest
         /// </summary>
         [HttpPost("send-info")]
-        public async Task<IActionResult> SendInfo([FromForm] string gsm, [FromForm] string message)
+        public async Task<IActionResult> SendInfo([FromBody] SendInfoRequest request)
         {
-            if (string.IsNullOrWhiteSpace(gsm))
+            if (request == null) return BadRequest("Request body required.");
+            if (string.IsNullOrWhiteSpace(request.Gsm))
             {
                 return BadRequest("Parameter 'gsm' is required.");
             }
 
-            if (string.IsNullOrWhiteSpace(message))
+            if (string.IsNullOrWhiteSpace(request.Message))
             {
                 return BadRequest("Parameter 'message' is required.");
             }
@@ -190,26 +186,18 @@ namespace HospitadentApi.WebService.Controllers
                 string originator = _configuration["Sms:Originator"] ?? "BASLIGIN"; // up to 11 chars
 
                 // Send SMS with the provided message
-                string responseXml = await SendSmsAsync(gsm, message, username, password, userCode, accountId, originator);
+                string responseXml = await SendSmsAsync(request.Gsm, request.Message, username, password, userCode, accountId, originator);
 
                 // Return provider response XML
                 return Content(responseXml, "application/xml", Encoding.UTF8);
             }
-            catch (TaskCanceledException ex) when (ex.InnerException is TimeoutException)
-            {
-                return StatusCode(504, "SMS servisi yanıt vermedi (timeout). Lütfen daha sonra tekrar deneyin.");
-            }
-            catch (TaskCanceledException ex)
-            {
-                return StatusCode(504, "SMS servisi yanıt vermedi (timeout). Lütfen daha sonra tekrar deneyin.");
-            }
             catch (HttpRequestException ex)
             {
-                return StatusCode(502, $"SMS servisi hatası: {ex.Message}");
+                return StatusCode(502, ex.Message);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Sunucu hatası: {ex.Message}");
+                return StatusCode(500, ex.Message);
             }
         }
 
